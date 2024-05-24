@@ -1,0 +1,53 @@
+\documentclass[11pt]{article}
+
+%\documentclass[a4paper]{article}
+%\usepackage[margin=.7in]{geometry}
+
+\usepackage{fontspec}
+\setmainfont{Helvetica Neue Light}
+\usepackage{upgreek}
+
+\usepackage{tikz}
+\usetikzlibrary{positioning}
+
+
+\usepackage[active,tightpage]{preview}
+\PreviewEnvironment{tikzpicture}
+
+\newcommand\figf{\bfseries\normalsize}
+
+\definecolor{h_color}{RGB}{214, 152, 77}
+\definecolor{pcf_color}{RGB}{0, 143, 12}
+\definecolor{ai_color}{RGB}{74, 22, 219}
+
+\begin{document}
+
+\begin{tikzpicture}[]
+
+\footnotesize
+
+\node [anchor=north west] (h_title) at (3.1, 0.2) {H};
+\node [anchor=north west] (pcf_title) at ([xshift=0.665cm, yshift=0]h_title.north east) {PCF};
+\node [anchor=north west] (ai_title) at ([xshift=0.665cm, yshift=0]pcf_title.north east) {LCF};
+
+\fill [h_color, fill opacity=0.2] ([xshift=-0.62cm, yshift=-0.04cm]h_title.south west) rectangle ([xshift=-0.06cm, yshift=0.04cm]h_title.north west); 
+\fill [pcf_color, fill opacity=0.2] ([xshift=-0.62cm, yshift=-0.04cm]pcf_title.south west) rectangle ([xshift=-0.06cm, yshift=0.04cm]pcf_title.north west); 
+\fill [ai_color, fill opacity=0.2] ([xshift=-0.62cm, yshift=-0.04cm]ai_title.south west) rectangle ([xshift=-0.06cm, yshift=0.04cm]ai_title.north west); 
+
+\draw [line width=0.0353cm, h_color] ([xshift=-0.58cm, yshift=0]h_title.west) -- ([xshift=-0.105cm, yshift=0]h_title.west);
+\draw [line width=0.0353cm, pcf_color] ([xshift=-0.58cm, yshift=0]pcf_title.west) -- ([xshift=-0.105cm, yshift=0]pcf_title.west);
+\draw [line width=0.0353cm, ai_color] ([xshift=-0.58cm, yshift=0]ai_title.west) -- ([xshift=-0.105cm, yshift=0]ai_title.west);
+
+\node [anchor=north west] at (0, -0.47) {\figf A}; 
+\node [anchor=north west] at (0, -0.3) {\includegraphics[width=8.4cm]{img/Power_hardcore.pdf}};
+
+\node [anchor=north west] at (0, -3.57) {\figf B}; 
+\node [anchor=north west] at (0, -3.4) {\includegraphics[width=8.4cm]{img/Power_strauss.pdf}};
+
+\node [anchor=north west] at (0, -6.62) {\figf C}; 
+\node [anchor=north west] at (0, -6.45) {\includegraphics[width=8.4cm]{img/Power_matern.pdf}};
+
+
+\end{tikzpicture}
+
+\end{document}

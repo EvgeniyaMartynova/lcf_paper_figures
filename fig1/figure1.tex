@@ -1,0 +1,37 @@
+\documentclass[a4paper,10pt]{article}
+
+%\documentclass[a4paper]{article}
+%\usepackage[margin=.7in]{geometry}
+
+\usepackage{fontspec}
+\setmainfont{Helvetica Neue Light}
+\usepackage{upgreek}
+
+\usepackage{tikz}
+\usetikzlibrary{positioning}
+
+
+\usepackage[active,tightpage]{preview}
+\PreviewEnvironment{tikzpicture}
+
+\newcommand\figf{\bfseries\normalsize}
+
+
+\begin{document}
+
+\begin{tikzpicture}[]
+
+\footnotesize
+
+
+\node [anchor=north west] at (0, 0) {\figf A}; 
+\node [anchor=north west] at (0.25, 0) {\includegraphics[width=2.65cm]{img/Disp_full.pdf}};
+\node [anchor=north west] at (2.9, 0) {\includegraphics[width=2.65cm]{img/Rand_full.pdf}};
+\node [anchor=north west] at (5.55, 0) {\includegraphics[width=2.65cm]{img/Clust_full.pdf}};
+
+\node [anchor=north west] at (0, -4.4) {\figf B}; 
+\node [anchor=north west] at (0, -4.5) {\includegraphics[width=8.4cm]{img/funcs.pdf}};
+
+\end{tikzpicture}
+
+\end{document}
