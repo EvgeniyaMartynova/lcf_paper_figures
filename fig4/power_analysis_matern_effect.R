@@ -36,13 +36,13 @@ parent_intensity <- num_parents / square_a
 
 # Params to change
 nums_points <-  c(25, 50, 100)
-cluster_rads <- c(5, 10, 20) #c(2.5, 5, 10, 20, 40, 60)
+cluster_rads <- c(2.5, seq(10, 60, 5))
 
 # Monte Carlo test parameters
 h1_pprocess <- "matern"
 
-num_h1 <- 100#1000
-num_h0 <- 50#5000
+num_h1 <- 1000
+num_h0 <- 5000
 num_boot <- 2000
 significance_level <- 0.05
 
@@ -110,24 +110,24 @@ for (num_points in nums_points) {
   # Approximate null distribution of summary functions
   intensity_pois_gen <- num_points * 1.1 / square_a
   poisson_processes <- sim_pp_pnum(num_points, rpoispp, num_h0, intensity_pois_gen, win=square_window)
-  
+
   lcf_out <- process_pps_lcf(poisson_processes, rpoispp, num_points, intensity_pois_gen,
                             interaction_dist_lcf, dim_lims, correction,
                             win=square_window)
-  
+
   poisson_processes <- lcf_out$updated_pps
   # Vector of length num_h1
   lcf_h0_stats <- lcf_out$lcf_stat
   lcf_h0_data <- list(h0=lcf_h0_stats)
-  
+
   h_func_h0_stats <- summ_stat(poisson_processes, interaction_dist_h, h_at_r, correction=correction)
   h_h0_data <- list(h0=h_func_h0_stats)
-  
+
   pcf_h0_stats <- summ_stat(poisson_processes, interaction_dist_pcf, pcf_at_r, correction=correction)
   pcf_h0_data <- list(h0=pcf_h0_stats)
-  
+
   num_offsprings <- num_points * 1.1 / num_parents
-  
+
   power_h <- NULL
   power_pcf <- NULL
   power_lcf <- NULL
@@ -141,7 +141,7 @@ for (num_points in nums_points) {
 
     # Calculate summary statics for H1
     matern_processes <- sim_pp_pnum(num_points, rMatClust, num_h1, parent_intensity, scale=cluster_rad, mu=num_offsprings, win=square_window)
-    
+
     lcf_out <- process_pps_lcf(matern_processes, rMatClust, num_points, parent_intensity,
                              interaction_dist_lcf, dim_lims, correction,
                              scale=cluster_rad, mu=num_offsprings, win=square_window)

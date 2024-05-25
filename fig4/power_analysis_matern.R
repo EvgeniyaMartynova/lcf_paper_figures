@@ -34,7 +34,7 @@ interaction_dist_lcf <- 2 * cluster_rad
 parent_intensity <- num_parents / square_a
 
 # Params to change
-nums_points <- seq(20, 100, 20)
+nums_points <- seq(20, 100, 5)
 h1_pprocess <- "matern"
 
 # To check power
@@ -109,23 +109,23 @@ for (num_points in nums_points) {
   experiment_name <- paste0("PN", num_points, "_Parents", num_parents)
   experiment_folder <- file.path(output_folder, experiment_name)
   dir.create(experiment_folder, showWarnings = FALSE)
-  
+
   # Approximate null distribution of summary functions
   intensity_pois_gen <- num_points * 1.1 / square_a
   poisson_processes <- sim_pp_pnum(num_points, rpoispp, num_h0, intensity_pois_gen, win=square_window)
-  
+
   lcf_out <- process_pps_lcf(poisson_processes, rpoispp, num_points, intensity_pois_gen,
                             interaction_dist_lcf, dim_lims, correction,
                             win=square_window)
-  
+
   poisson_processes <- lcf_out$updated_pps
   # Vector of length num_h1
   lcf_h0_stats <- lcf_out$lcf_stat
   lcf_h0_data <- list(h0=lcf_h0_stats)
-  
+
   h_func_h0_stats <- summ_stat(poisson_processes, interaction_dist_h, h_at_r, correction=correction)
   h_h0_data <- list(h0=h_func_h0_stats)
-  
+
   pcf_h0_stats <- summ_stat(poisson_processes, interaction_dist_pcf, pcf_at_r, correction=correction)
   pcf_h0_data <- list(h0=pcf_h0_stats)
 
@@ -147,7 +147,7 @@ for (num_points in nums_points) {
   # Vector of length num_h1
   pcf_h1_stats <- summ_stat(matern_processes, interaction_dist_pcf, pcf_at_r, correction=correction)
 
-  # Get power estimate with bootstrap    
+  # Get power estimate with bootstrap
   h_boot_rej <- pval_boot_bca(h_func_h1_stats, reject_stat, h_h0_data, B=num_boot)
   pcf_boot_rej <- pval_boot_bca(pcf_h1_stats, reject_stat, pcf_h0_data, B=num_boot)
   lcf_boot_rej <- pval_boot_bca(lcf_h1_stats, reject_stat, lcf_h0_data, B=num_boot)

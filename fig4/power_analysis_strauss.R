@@ -27,13 +27,13 @@ dim_lims <- c(4, 50)
 
 # Parameters to change
 inh_distance <- 5
-nums_points <-c(50, 100, 200)  #seq(40, 200, 20)
+nums_points <- seq(40, 200, 10)
 h1_pprocess <- "strauss"
 gamma <- 0.25
 
 # Num of patterns generated with H1
-num_h1 <- 100#1000
-num_h0 <- 50#5000
+num_h1 <- 1000
+num_h0 <- 5000
 num_boot <- 2000
 significance_level <- 0.05
 
@@ -104,26 +104,26 @@ for (num_points in nums_points) {
   experiment_name <- paste0("IHD", inh_distance, "_PN", num_points)
   experiment_folder <- file.path(output_folder, experiment_name)
   dir.create(file.path(output_folder, experiment_name), showWarnings = FALSE)
-  
+
   # Approximate null distribution of summary functions
   intensity_pois_gen <- num_points * 1.1 / square_a
   poisson_processes <- sim_pp_pnum(num_points, rpoispp, num_h0, intensity_pois_gen, win=square_window)
-  
+
   lcf_out <- process_pps_lcf(poisson_processes, rpoispp, num_points, intensity_pois_gen,
                             inh_distance, dim_lims, correction,
                             win=square_window)
-  
+
   poisson_processes <- lcf_out$updated_pps
   # Vector of length num_h1
   lcf_h0_stats <- lcf_out$lcf_stat
   lcf_h0_data <- list(h0=lcf_h0_stats)
-  
+
   h_func_h0_stats <- summ_stat(poisson_processes, inh_distance, h_at_r, correction=correction)
   h_h0_data <- list(h0=h_func_h0_stats)
-  
+
   pcf_h0_stats <- summ_stat(poisson_processes, inh_distance, pcf_at_r, correction=correction)
   pcf_h0_data <- list(h0=pcf_h0_stats)
-  
+
   # Calculate summary statics for H1
   intensity_gen <- num_points * 1.5 / square_a
   hc_processes <- sim_pp_pnum(num_points, rStrauss, num_h1, intensity_gen, gamma = gamma, R=inh_distance, W=square_window)

@@ -97,26 +97,26 @@ for (num_points in nums_points) {
   pn_info <- paste0("PN", num_points)
   pn_folder <- file.path(output_folder, pn_info)
   dir.create(pn_folder, showWarnings = FALSE)
-  
+
   # Approximate null distribution of summary functions
   intensity_pois_gen <- num_points * 1.1 / square_a
   poisson_processes <- sim_pp_pnum(num_points, rpoispp, num_h0, intensity_pois_gen, win=square_window)
-  
+
   # In rare cases obtaining a monotone smooth fails and LCF cannot be computed
   # This function handles it by drawing another realization of a point process
   # For such cases
   lcf_out <- process_pps_lcf(poisson_processes, rpoispp, num_points, intensity_pois_gen,
                             inh_distance_check, dim_lims, correction,
                             win=square_window)
-  
+
   poisson_processes <- lcf_out$updated_pps
   # Vector of length num_h1
   lcf_h0_stats <- lcf_out$lcf_stat
   lcf_h0_data <- list(h0=lcf_h0_stats)
-  
+
   h_func_h0_stats <- summ_stat(poisson_processes, inh_distance_check, h_at_r, correction=correction)
   h_h0_data <- list(h0=h_func_h0_stats)
-  
+
   pcf_h0_stats <- summ_stat(poisson_processes, inh_distance_check, pcf_at_r, correction=correction)
   pcf_h0_data <- list(h0=pcf_h0_stats)
 
