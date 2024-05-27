@@ -1,6 +1,7 @@
 ## Utils for the code for paper figures only
 library(jsonlite)
 library(stringr)
+library(sf)
 
 make_rect_df <- function(width, height, origin=c(0, 0)) {
   xo <- origin[1]
@@ -22,6 +23,38 @@ make_circle_df <- function(xo, yo, radius) {
   ys <- sin(angles) * radius + yo
   circle_df <- data.frame(x=xs, y=ys)
   return(circle_df)
+}
+
+# Generates point pattern maximally dispersed at a given distance
+max_disp_pp <- function(window, dist, show_plot=FALSE) {
+  
+  window_df <- as.data.frame(cbind(window$bdry[[1]]$x, window$bdry[[1]]$y))
+  window_df[nrow(window_df) + 1,] <- window_df[1,]
+  
+  coords_list <- list(as.matrix(window_df))
+  polygon <- st_polygon(coords_list)
+  
+  side <- dist * sin(pi/3) *2
+  grid <- st_make_grid(polygon, c(side, side), square=FALSE)
+  
+  if (show_plot) {
+    plot(grid)
+    plot(polygon, add = TRUE)
+  }
+  
+  tess_verts <- NULL
+  for (hex in grid) {
+    vert <- data.frame(hex[[1]][1:6, ])
+    middle_y <- (max(vert$y) + min(vert$y)) / 2
+    middle_x <- (max(vert$x) + min(vert$x)) / 2
+    vert[nrow(vert) +1, ] <- c(middle_y, middle_x)
+    
+    tess_verts <- rbind(tess_verts, vert)
+  }
+  tess_verts_unique <- distinct(tess_verts)
+  
+  disp_pp <- ppp(tess_verts_unique$y, tess_verts_unique$x, window = window)
+  return(disp_pp)
 }
 
 # Creates an owin (spatstat) object based on the roi coordinates
@@ -237,7 +270,8 @@ pc_func <- function(pp, ...) {
   return(pc_fun_df[2:nrow(pc_fun_df), ])
 }
 
-save_pp_as_pdf <- function(pp, col, disp_window_df, clust_rad=NULL, clust_o_x=0, clust_o_y=0, cex=1, scale=NULL, scale_offset=NULL) {
+save_pp_as_pdf <- function(pp, col, disp_window_df, clust_rad=NULL, clust_o_x=0, clust_o_y=0, cex=1, 
+                           scale=NULL, scale_offset=NULL, text_height=30) {
   points <- data.frame(X=pp$x, Y=pp$y)
   x_lim <- c(min(disp_window_df$X), max(disp_window_df$X))
   y_lim <- c(min(disp_window_df$Y), max(disp_window_df$Y))
@@ -264,12 +298,11 @@ save_pp_as_pdf <- function(pp, col, disp_window_df, clust_rad=NULL, clust_o_x=0,
     seg_x0 <- x_lim[1] + scale_offset
     seg_x1 <- seg_x0 + scale
     # For Y axis offset should be negative
-    text_height <- 30
     seg_y0 <- y_lim[1] + scale_offset * 1.3 + text_height
     seg_y1 <- seg_y0
 
     segments(seg_x0, seg_y0, x1 = seg_x1, y1 = seg_y1,
-             col = "black", lwd=4, lend=1)
+             col = "black", lwd=4, lend=2)
 
     label_x <- seg_x0
     label_y <- seg_y0 - text_height
