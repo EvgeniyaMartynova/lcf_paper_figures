@@ -1,6 +1,6 @@
 library(ggplot2)
 
-default_pointsize <- 9
+default_pointsize <- 8
 quartzFonts(sans = quartzFont(c("Helvetica Neue Light", "Helvetica Neue", "Helvetica Light","Helvetica")))
 
 ggp2_magic_number <- ggplot2::.pt * 72.27/96

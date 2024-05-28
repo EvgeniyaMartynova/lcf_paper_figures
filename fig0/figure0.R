@@ -5,6 +5,8 @@ library(dplyr)
 library(lcfstat)
 library(spatstat)
 library(ggplot2)
+library(ggmagnify)
+library(grid)
 
 source("../settings.R")
 source("../utils_lcf.R")
@@ -91,7 +93,8 @@ lcf_df <- NULL
 steps_in <- 513
 
 lcf_mc_dims <- c(30, 40, 50)
-lcf_md_dims <- c(12, 18, 25)
+#lcf_md_dims <- c(12, 18, 25)
+lcf_md_dims <- c(30, 45, 60)
 i <- 1
 
 for (square_side in square_sides) {
@@ -159,6 +162,23 @@ for (square_side in square_sides) {
   i <- i + 1
 }
 
+
+if (FALSE) {
+  plot(pcf_mc)
+  plot(pcf_rand)
+  
+  plot(pcf_md)
+  
+  plot(lcf_md)
+  abline(v=0.15, col=2)
+  abline(v=2*column_distance, col=2)
+  abline(v=0.3, col=2)
+  abline(v=0.398, col=2)
+  abline(v=0.45, col=2)
+  abline(v=4*column_distance, col=2)
+  abline(v=0.54, col=2)
+}
+
 if (FALSE) {
 # Visualization of the point patterns
 square_side <- square_sides[1]
@@ -204,9 +224,11 @@ k_df <- k_df %>%
 k_p <- plot_sf(k_df, "K")
 k_p
 
-pdf_out(file.path(img_folder, "K_plot.pdf"), width=width, height=height)
-print(k_p)
-dev.off()
+if (FALSE) {
+  pdf_out(file.path(img_folder, "K_plot.pdf"), width=width, height=height)
+  print(k_p)
+  dev.off()
+}
 
 # H
 h_df <- k_df %>%
@@ -216,17 +238,21 @@ h_df <- k_df %>%
 h_p <- plot_sf(h_df, "H")
 h_p
 
-pdf_out(file.path(img_folder, "H_plot.pdf"), width=width, height=height)
-print(h_p)
-dev.off()
+if (FALSE) {
+  pdf_out(file.path(img_folder, "H_plot.pdf"), width=width, height=height)
+  print(h_p)
+  dev.off()
+}
 
 # White
 w_p <- plot_sf(w_df, "W")
 w_p
 
-pdf_out(file.path(img_folder, "White_plot.pdf"), width=width, height=height)
-print(w_p)
-dev.off()
+if (FALSE) {
+  pdf_out(file.path(img_folder, "White_plot.pdf"), width=width, height=height)
+  print(w_p)
+  dev.off()
+}
 
 
 # PCF
@@ -234,13 +260,22 @@ pcf_df <- pcf_df %>%
   mutate(pattern = as.factor(pattern),
          square = as.factor(square))
 
+max_md <- max((pcf_df %>% filter(pattern=="md"))$sf)
+
+pcf_df1 <- pcf_df %>%
+  mutate(plot = case_when(pattern=="mc" & sf > max_md * 1.3 ~ FALSE,
+                          TRUE ~ TRUE)) %>%
+  filter(plot) %>%
+  select(-plot)
 
 pcf_p <- plot_sf(pcf_df, "PCF")
 pcf_p
 
-pdf_out(file.path(img_folder, "PCF_plot.pdf"), width=width, height=height)
-print(pcf_p)
-dev.off()
+if (FALSE) {
+  pdf_out(file.path(img_folder, "PCF_plot.pdf"), width=width, height=height)
+  print(pcf_p)
+  dev.off()
+}
 
 # LCF
 lcf_df <- lcf_df %>%
@@ -251,21 +286,22 @@ lcf_df <- lcf_df %>%
 lcf_p <- plot_sf(lcf_df, "LCF")
 lcf_p
 
-pdf_out(file.path(img_folder, "LCF_plot.pdf"), width=width, height=height)
-print(lcf_p)
-dev.off()
+if (FALSE) {
+  pdf_out(file.path(img_folder, "LCF_plot.pdf"), width=width, height=height)
+  print(lcf_p)
+  dev.off()
+}
 
-# Plot together
+# Plot together 
 
 k_df["func"] <- "K"
-h_df["func"] <- "H"
-w_df["func"] <- "W"
-pcf_df["func"] <- "PCF"
+w_df["func"] <- "H*"
+pcf_df1["func"] <- "PCF"
 lcf_df["func"] <- "LCF"
-sfs_df <- rbind(k_df, h_df, w_df, pcf_df, lcf_df)
 
+sfs_df <- rbind(k_df, w_df, pcf_df1, lcf_df)
 sfs_df <- sfs_df %>%
-  mutate(func = factor(func, levels = c("K", "H", "W", "PCF", "LCF")))
+  mutate(func = factor(func, levels = c("K", "H*", "PCF", "LCF")))
 
 # Save the dataframe as .csv
 write.csv(sfs_df, "sfs_df.csv")
@@ -275,10 +311,27 @@ grid_labeller <- label_bquote(cols = "|W|"~"="~.(as.character(square)), rows= .(
 breaks_x <- c(0, 0.5, 1)
 labels_x <- c("0", "0.5", "1")
 
+dummy_h <- data.frame(r = rep(0.1, 3), sf = rep(1, 3),
+                      pattern = rep("mc", 3), square= factor(c(1,2,4)), 
+                      func=factor("H*", levels = c("K", "H*", "PCF", "LCF")))
+
+dummy_k <- data.frame(r = rep(0.1, 3), sf = rep(-3.5, 3),
+                      pattern = rep("mc", 3), square= factor(c(1,2,4)), 
+                      func=factor("K", levels = c("K", "H*", "PCF", "LCF")))
+
+dummy <- rbind(dummy_h, dummy_k)
+
+magnify_data <- data.frame(func = factor(c("K", "K", "K"), levels = c("K", "H*", "PCF", "LCF")),
+                           square = factor(c("1", "2", "4"), levels = c("1", "2", "4")))
+
+magnify_data$from <- list(c(0, 0.405, -0.01, 0.405), c(0, 0.405, -0.01, 0.405), c(0, 0.405, -0.01, 0.405))
+magnify_data$to <- list(c(0.106, 0.458, -0.75, -3.25), c(0.15, 0.648, -0.75, -3.25), c(0.216, 0.917, -0.75, -3.25))
+
 sf_p <- ggplot(sfs_df) +
   facet_grid(func~square, labeller=grid_labeller, scales = "free", switch = "y") +
   geom_line(aes(x=r, y=sf, col=pattern), linewidth=line_width) +
-  scale_colour_manual(values = c(clustered_color, dispersed_color, random_color)) +
+  geom_point(aes(x=r, y=sf, col="white"), data=dummy) +
+  scale_colour_manual(values = c(clustered_color, dispersed_color, random_color, "white")) +
   scale_x_continuous(breaks = breaks_x, labels=labels_x, expand = expansion_x) +
   scale_y_continuous(expand = expansion_y) +
   theme_bw(base_size = default_pointsize, base_family = default_font) +
@@ -300,15 +353,39 @@ sf_p <- ggplot(sfs_df) +
         axis.line.x = element_line(colour = "black", linewidth=line_width),
         axis.title.y = element_text(angle=0, vjust=0.5),
         axis.ticks.y = element_line(colour = "black", linewidth=line_width),
-        legend.position="none")
+        legend.position="none") +
+  geom_magnify(mapping=aes(from = from, to = to), shape = "rect",
+               data=magnify_data, expand = 0, proj.linetype=2,
+               colour="black", proj = "corresponding", linewidth=line_width / 2) 
 
 sf_p
 
-pdf_out(file.path(img_folder, "sfs_plot.pdf"), width=width, height=4.6)
+coef <- (4 + 3.5) / 4
+
+gt <- ggplot_gtable(ggplot_build(sf_p))
+gt$heights[10] <- coef * gt$heights[10]
+grid.draw(gt)
+
+facet_height <- 0.9
+facet_space <- 0.02
+height <- facet_height * coef + 3 * facet_height + 4 * facet_space
+
+pdf_out(file.path(img_folder, "sfs_plot_adj.pdf"), width=width, height=height)
+grid.draw(gt)
+dev.off()
+
+library(gtable)
+gtable_show_layout(gt)
+
+
+pdf_out(file.path(img_folder, "sfs_plot.pdf"), width=width, height=4.175)
 print(sf_p)
 dev.off()
 
- if (FALSE) {
+ # Try combining plots with
+
+
+if (FALSE) {
   disp_distance <- 0.15
   
   square_side <- 2

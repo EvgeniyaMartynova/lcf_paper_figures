@@ -16,7 +16,8 @@ h_color <- "#D6984D"
 pclcf_color <- "#008F0C"
 lcf_color <- "#4A16DB"
 
-expansion_xy <- expansion(mult = 0.01, add = 0)
+expansion_x <- expansion(mult = 0.01, add = 0)
+expansion_y <- expansion(mult = 0.02, add = 0)
 line_width <- 1 / ggp2_magic_number
 
 num_to_str <- function(num) {
@@ -52,8 +53,8 @@ build_power_sample_plot <- function(power_df, facet_labeller, breaks_x=waiver(),
     scale_colour_manual(values = c(h_color, pclcf_color, lcf_color)) +
     scale_fill_manual(values = c(h_color, pclcf_color, lcf_color)) +
     facet_wrap(~title, labeller = facet_labeller, strip.position = "top", nrow=1) +
-    scale_x_continuous(breaks = breaks_x, expand = expansion_xy, limits=x_lim) +
-    scale_y_continuous(breaks = breaks_y, expand = expansion_xy, limits=y_lim) +
+    scale_x_continuous(breaks = breaks_x, expand = expansion_x, limits=x_lim) +
+    scale_y_continuous(breaks = breaks_y, expand = expansion_y, limits=y_lim) +
     theme_bw(base_size = default_pointsize, base_family = default_font) + 
     ylab(y_lab) +
     xlab("N") +
@@ -63,7 +64,7 @@ build_power_sample_plot <- function(power_df, facet_labeller, breaks_x=waiver(),
           strip.text.x = element_text(vjust = vj, size = default_pointsize, family = default_font, colour = "black"),
           legend.title=element_blank(),
           axis.line = element_line(colour = "black", linewidth=line_width),
-          axis.text = element_text(size = default_pointsize - 2, family = default_font, colour = "black"),
+          axis.text = element_text(size = default_pointsize - 1, family = default_font, colour = "black"),
           panel.grid.major = element_blank(), 
           panel.grid.minor = element_blank(),
           panel.border = element_blank(),
@@ -125,15 +126,15 @@ build_power_effect_plot <- function(power_df, x_col, x_name, x_lim,
     scale_colour_manual(values = c(h_color, pclcf_color, lcf_color)) +
     scale_fill_manual(values = c(h_color, pclcf_color, lcf_color)) +
     facet_wrap(~ind, scales = "free_x", strip.position = "top", nrow=1) +
-    scale_x_continuous(breaks = breaks_x, labels=labels_x, expand = expansion_xy, limits=x_lim) +
-    scale_y_continuous(breaks = breaks_y, expand = expansion_xy, limits=c(0, 1)) +
+    scale_x_continuous(breaks = breaks_x, labels=labels_x, expand = expansion_x, limits=x_lim) +
+    scale_y_continuous(breaks = breaks_y, expand = expansion_y, limits=c(0, 1)) +
     theme_bw(base_size = default_pointsize, base_family = default_font) + 
     xlab(x_name) +
     theme(plot.margin = margin(0, 3, 0, 0),
           panel.spacing = unit(0.3, "lines"),
           strip.background = element_blank(),
           strip.text.x = element_text(vjust = vj, size = default_pointsize, family = default_font, colour = "black"),
-          axis.text.x = element_text(size = default_pointsize - 2, family = default_font, colour = "black"),
+          axis.text.x = element_text(size = default_pointsize - 1, family = default_font, colour = "black"),
           axis.line.x = element_line(colour = "black", linewidth=line_width),
           axis.line.y =  element_blank(),
           axis.title.y = element_blank(),
@@ -278,7 +279,7 @@ dev.off()
 point_nums <- c(25, 50, 100)
 
 # Effect size, radius
-file_path_template <- file.path(data_folder, "power_pn%s_radius.csv")
+file_path_template <- file.path(data_folder, "power_pn%s.csv")
 
 power_effect_df <- read_power_effect_data(file_path_template, point_nums)
 

@@ -306,7 +306,7 @@ save_pp_as_pdf <- function(pp, col, disp_window_df, clust_rad=NULL, clust_o_x=0,
 
     label_x <- seg_x0
     label_y <- seg_y0 - text_height
-    text(label_x, label_y, as.expression(bquote(bold(.(as.character(scale)))~bold(units))), cex=1, adj = 0)
+    text(label_x, label_y, as.expression(bquote(bold(.(as.character(scale)))~bold(units))), cex=0.675, adj = 0)
   }
   points(points$X, points$Y, pch=16, col=col, cex=cex)
 }
