@@ -271,7 +271,7 @@ pc_func <- function(pp, ...) {
 }
 
 save_pp_as_pdf <- function(pp, col, disp_window_df, clust_rad=NULL, clust_o_x=0, clust_o_y=0, cex=1, 
-                           scale=NULL, scale_offset=NULL, text_height=30) {
+                           scale=NULL, scale_offset=NULL, scale_lwd=4, text_height=30) {
   points <- data.frame(X=pp$x, Y=pp$y)
   x_lim <- c(min(disp_window_df$X), max(disp_window_df$X))
   y_lim <- c(min(disp_window_df$Y), max(disp_window_df$Y))
@@ -302,7 +302,7 @@ save_pp_as_pdf <- function(pp, col, disp_window_df, clust_rad=NULL, clust_o_x=0,
     seg_y1 <- seg_y0
 
     segments(seg_x0, seg_y0, x1 = seg_x1, y1 = seg_y1,
-             col = "black", lwd=4, lend=2)
+             col = "black", lwd=scale_lwd, lend=2)
 
     label_x <- seg_x0
     label_y <- seg_y0 - text_height
