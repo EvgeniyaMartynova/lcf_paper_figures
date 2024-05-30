@@ -13,12 +13,14 @@ source("../utils_lcf.R")
 
 plot_sf <- function(sf_df,
                     fun_name,
-                    breaks_y=waiver(),
-                    labels_y=waiver(),
+                    breaks_y = waiver(),
+                    labels_y = waiver(),
                     ylim=NULL,
-                    add_xaxis=FALSE,
-                    y_lab_hjust=NULL,
-                    y_lab_vjust=NULL) {
+                    add_xaxis = FALSE,
+                    add_facet_labels = FALSE,
+                    h_lines = NULL,
+                    y_lab_hjust = NULL,
+                    y_lab_vjust = NULL) {
 
   if (is.null(ylim)) {
     ylim <- c(min(sf_df$sf), max(sf_df$sf))
@@ -39,8 +41,16 @@ plot_sf <- function(sf_df,
     line_x <- element_blank()
   }
 
+  if (add_facet_labels) {
+    strip_text <- element_text(size = default_pointsize, family = default_font, colour = "black")
+  } else {
+    strip_text <- element_blank()
+  }
+
+  square_labeller <- label_bquote(cols = "|W|="~.(as.numeric(levels(square_s))[square_s]))
+
   sf_p <- ggplot(sf_df) +
-    facet_wrap(~square_s, scales = "free_x", strip.position = "top", nrow=1) +
+    facet_wrap(~square_s, scales = "free_x", strip.position = "top", labeller = square_labeller, nrow=1) +
     geom_line(aes(x=r, y=sf, col=pattern), linewidth=line_width) +
     scale_colour_manual(values = c(clustered_color, dispersed_color, random_color)) +
     scale_x_continuous(breaks = breaks_x, labels=labels_x, expand = stand_expansion) +
@@ -51,7 +61,7 @@ plot_sf <- function(sf_df,
     theme(plot.margin = margin(2, 2, 0, 4),
           panel.spacing = unit(0.5, "lines"),
           strip.background = element_blank(),
-          strip.text.x = element_blank(),
+          strip.text.x = strip_text,
           legend.title=element_blank(),
           panel.grid.major = element_blank(),
           panel.grid.minor = element_blank(),
@@ -65,6 +75,13 @@ plot_sf <- function(sf_df,
           axis.ticks.y = element_line(colour = "black", linewidth=line_width),
           axis.ticks.x = ticks_x,
           legend.position="none")
+
+  if (!is.null(h_lines)) {
+    for (h_line in h_lines) {
+      sf_p <- sf_p +
+        geom_hline(yintercept = h_line, linewidth=line_width * 0.75, col="gray")
+    }
+  }
 
   sf_p
 }
@@ -218,8 +235,8 @@ k_middle <- 2
 # We want ylab title to be in the middle of the "real" K range
 hjust <- (k_middle - k_ylim[1]) / (k_ylim[2] - k_ylim[1])
 
-k_p <- plot_sf(k_df, "K", breaks_y = c(0, 2, 4), labels_y = c("0.0", "2.0", "4.0"),
-               ylim = k_ylim, y_lab_hjust = hjust)
+k_p <- plot_sf(k_df, "K", breaks_y = c(0, 1, 2, 4), labels_y = c("0.0", "1.0", "2.0", "4.0"),
+               ylim = k_ylim, add_facet_labels=TRUE, y_lab_hjust = hjust)
 
 # Add squared inset
 magnify_data <- data.frame(square_s = factor(c("1", "2", "4"), levels = c("1", "2", "4")))
@@ -266,7 +283,8 @@ write.csv(h1_df, file.path(data_folder, "h1.csv"))
 
 ylim_h1 <- c(min(h1_df$sf), 1)
 
-h1_p <- plot_sf(h1_df, "H1", breaks_y = c(0, 0.5, 1), labels_y = c("0.0", "0.5", "1.0"), ylim = ylim_h1)
+h1_p <- plot_sf(h1_df, "H1", breaks_y = c(0, 0.5, 1), labels_y = c("0.0", "0.5", "1.0"),
+                ylim = ylim_h1, h_lines = c(1))
 h1_p
 
 # PCF
@@ -308,7 +326,8 @@ k_coef <- (k_ylim[2] - k_ylim[1]) / k_ylim[2]
 # Inches
 facet_height <- 0.9
 facet_space <- 0.02
-height <- facet_height * k_coef + 3 * facet_height + 4 * facet_space
+labels_height <- 0.03
+height <- facet_height * k_coef + 3 * facet_height + 4 * facet_space + labels_height
 
 pdf_out(file.path(img_folder, "sfs_plot.pdf"), width=width, height=height)
 ggarrange(k_p_ins, h1_p, pcf_p, lcf_p,
