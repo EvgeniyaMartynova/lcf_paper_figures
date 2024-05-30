@@ -6,6 +6,7 @@ library(dplyr)
 library(tidyr)
 library(jsonlite)
 library(RColorBrewer)
+library(ggmagnify)
 
 source("../settings.R")
 
@@ -19,12 +20,12 @@ dir.create(output_folder, showWarnings = FALSE)
 
 air_stat_df <- read.csv(air_stat_fp)
 air_stat_df <- air_stat_df %>%
-  select(r, val)
+  dplyr::select(r, val)
 air_stat_df$ftype <- "Air"
 
 waste_stat_df <- read.csv(waste_stat_fp)
 waste_stat_df <- waste_stat_df %>%
-  select(r, val)
+  dplyr::select(r, val)
 waste_stat_df$ftype <- "Waste"
 
 stat_df <- rbind(air_stat_df, waste_stat_df)
@@ -32,7 +33,7 @@ stat_df <- stat_df %>%
   mutate(ftype = factor(ftype)) %>%
   mutate(r = r / 1000)
 
-air_color <- "#A63603" 
+air_color <- "#A63603"
 waste_color <- "#08519C"
 
 rmax <- 75
@@ -57,7 +58,10 @@ lcf_plot <- ggplot(stat_df) +
         panel.border = element_blank(),
         axis.text = element_text(size = default_pointsize, family = default_font, colour = "black"),
         axis.title = element_text(size = default_pointsize, family = default_font),
-        legend.position="none")
+        legend.position="none") +
+  geom_magnify(from = c(0, 15, 0, 0.4), to = c(15, 41.25, -0.85, -0.15), shape = "rect",
+               expand = 0, proj.linetype=2,
+               colour="black", linewidth=line_width / 2)
 
 lcf_plot
 

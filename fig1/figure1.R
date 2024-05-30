@@ -89,7 +89,8 @@ plot_full_and_zoomed_pp <- function(points,
                                     large_radius,
                                     zoom_ratio=0.75,
                                     angles=c(0, pi, pi / 20, 19 * pi / 20),
-                                    plot_radii=FALSE) {
+                                    plot_radii=FALSE,
+                                    add_scale=FALSE) {
 
   large_radius_sc <- zoom_ratio * disp_square_side / 2
 
@@ -112,6 +113,24 @@ plot_full_and_zoomed_pp <- function(points,
 
   draw.circle(point_vis$X, point_vis$Y, small_radius, lw=1)
   draw.circle(point_vis$X, point_vis$Y, large_radius, lw=1)
+
+  # Add scale
+  if (add_scale) {
+    scale_offset <- 5
+    text_height <- 9
+    seg_x0 <- x_lim[2] - scale_offset - small_radius
+    seg_x1 <- seg_x0 + small_radius
+    # For Y axis offset should be negative
+    seg_y0 <- y_lim[2] - scale_offset
+    seg_y1 <- seg_y0
+
+    segments(seg_x0, seg_y0, x1 = seg_x1, y1 = seg_y1,
+             col = "black", lwd=3, lend=2)
+
+    label_x <- seg_x0 - 25
+    label_y <- seg_y0 - text_height
+    text(label_x, label_y, as.expression(bquote(bold(.(as.character(small_radius)))~bold(units))), cex=0.675, adj = 0)
+  }
 
   # Vis ROI
   encl_circle_win <- disc(large_radius, c(point_vis$X, point_vis$Y))
@@ -259,7 +278,8 @@ clust_points_plot <- data.frame(X=pp_plot_subset$x, Y=pp_plot_subset$y)
 # Full visualisation of point pattern subset and F-func ROI
 clust_pp_file <- file.path(output_folder, "Clust_full.pdf")
 pdf_out(clust_pp_file, width = pdf_width, height = pdf_height)
-plot_full_and_zoomed_pp(clust_points_plot, clustered_color, disp_square_df, point_vis, small_radius, large_radius, zoom_ratio)
+plot_full_and_zoomed_pp(clust_points_plot, clustered_color, disp_square_df, point_vis,
+                        small_radius, large_radius, zoom_ratio, add_scale=TRUE)
 dev.off()
 
 # Dispersed
@@ -289,23 +309,23 @@ dev.off()
  # Plot everything together
 rmax <- sim_square_side / 4
 dim_lims <- c(10, 50)
-x_breaks <- c(0, rmax / 2, rmax)
+x_breaks <- c(0, small_radius, 2*small_radius, rmax / 2, rmax)
 x_labels <- as.integer(round(x_breaks))
 
 # Calculate F function for point patterns
 random_lcf <- LCFest(rand_pp, rmax=rmax, dim_lims = dim_lims)
 random_lcf_df <- as.data.frame(random_lcf) %>%
-  select(-theo) %>%
+  dplyr::select(-theo) %>%
   mutate(type="random")
 
 clustered_lcf <- LCFest(clust_pp, rmax=rmax, dim_lims = dim_lims)
 clustered_lcf_df <- as.data.frame(clustered_lcf) %>%
-  select(-theo) %>%
+  dplyr::select(-theo) %>%
   mutate(type="clustered")
 
 dispersed_lcf <- LCFest(strauss_pp, rmax=rmax, dim_lims = dim_lims)
 dispersed_lcf_df <- as.data.frame(dispersed_lcf) %>%
-  select(-theo) %>%
+  dplyr::select(-theo) %>%
   mutate(type="dispersed")
 
 lcf_df <- rbind(random_lcf_df, clustered_lcf_df, dispersed_lcf_df) %>%
@@ -320,7 +340,9 @@ lcf_p <- ggplot(lcf_df) +
   geom_segment(aes(x = x1, y = y_rand, xend = x2, yend = y_rand, col = "black"),
                data = spec_lines_df, linewidth=line_width) +
   geom_line(aes(x=r, y=iso, col=type), linewidth=line_width) +
-  scale_colour_manual(values = c("black", clustered_color, dispersed_color, random_color)) +
+  geom_vline(xintercept = small_radius, linewidth=line_width, col="black", linetype="dashed") +
+  geom_vline(xintercept = small_radius * 2, linewidth=line_width, col="black", linetype="dashed") +
+  scale_colour_manual(values = c(dispersed_color, random_color, clustered_color, "black")) +
   scale_x_continuous(breaks = x_breaks, labels = x_labels, limits=c(0, rmax), expand = stand_expansion) +
   scale_y_continuous(limits=c(-1, 1), expand = stand_expansion) +
   theme_bw(base_size = default_pointsize, base_family = default_font) +
@@ -346,17 +368,17 @@ dev.off()
 # Calculate H function for point patterns
 random_h_df <- h_func(rand_pp, rmax=rmax, correction="Ripley")
 random_h_df <- random_h_df %>%
-  select(-theo) %>%
+  dplyr::select(-theo) %>%
   mutate(type="random")
 
 clustered_h_df <- h_func(clust_pp, rmax=rmax, correction="Ripley")
 clustered_h_df <- clustered_h_df %>%
-  select(-theo) %>%
+  dplyr::select(-theo) %>%
   mutate(type="clustered")
 
 dispersed_h_df <- h_func(strauss_pp, rmax=rmax, correction="Ripley")
 dispersed_h_df <- dispersed_h_df %>%
-  select(-theo) %>%
+  dplyr::select(-theo) %>%
   mutate(type="dispersed")
 
 h_df <- rbind(random_h_df, clustered_h_df, dispersed_h_df) %>%
@@ -370,7 +392,9 @@ h_p <- ggplot(h_df) +
   geom_segment(aes(x = x1, y = y_rand, xend = x2, yend = y_rand, col = "black"),
                data = spec_lines_df, linewidth=line_width) +
   geom_line(aes(x=r, y=iso, col=type), linewidth=line_width) +
-  scale_colour_manual(values = c("black", clustered_color, dispersed_color, random_color)) +
+  geom_vline(xintercept = small_radius, linewidth=line_width, col="black", linetype="dashed") +
+  geom_vline(xintercept = small_radius * 2, linewidth=line_width, col="black", linetype="dashed") +
+  scale_colour_manual(values = c(dispersed_color, random_color, clustered_color, "black")) +
   scale_x_continuous(breaks = x_breaks, labels = x_labels, limits=c(0, rmax), expand = stand_expansion) +
   scale_y_continuous(limits=h_ylim, expand = stand_expansion) +
   theme_bw(base_size = default_pointsize, base_family = default_font) +
@@ -395,6 +419,6 @@ dev.off()
 
 
 pdf_out(file.path(output_folder, "funcs.pdf"), width=3.3, height=1.6)
-print(ggarrange(h_p, lcf_p, ncol = 2))
+print(ggarrange(h_p, lcf_p, ncol = 2, nrow=1, newpage = FALSE))
 dev.off()
 

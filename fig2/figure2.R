@@ -210,7 +210,8 @@ y_lim <- c(min(three_clust_disp_df$Y), max(three_clust_disp_df$Y))
 wh_ratio <- (y_lim[2] - y_lim[1]) / (x_lim[2] - x_lim[1])
 pdf_width <- 1.5
 pdf_out(three_clust_pp_file, width = pdf_width, height = pdf_width * wh_ratio)
-save_pp_as_pdf(three_clust_pp, clustered_color, three_clust_disp_df, scale=50, scale_offset=20, cex=0.5)
+save_pp_as_pdf(three_clust_pp, clustered_color, three_clust_disp_df, scale=50,
+               scale_offset=20, cex=0.5)
 dev.off()
 
 # Matern cluster
@@ -330,7 +331,8 @@ print(ggarrange(lcf_three_clust_p, lcf_matern_p,
                 h_three_clust_p, h_matern_p,
                 pcf_three_clust_p, pcf_matern_p,
                 ncol = 2,
-                bottom=textGrob("r", gp = gpar(fontsize=default_pointsize, fontfamily=default_font))))
+                bottom=textGrob("r", gp = gpar(fontsize=default_pointsize, fontfamily=default_font)),
+                newpage = FALSE))
 dev.off()
 
 

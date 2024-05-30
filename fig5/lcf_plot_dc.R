@@ -7,6 +7,7 @@ library(dplyr)
 library(tidyr)
 library(jsonlite)
 library(RColorBrewer)
+library(ggmagnify)
 
 source("../utils_lcf.R")
 source("../settings.R")
@@ -100,7 +101,7 @@ for (ctype in types) {
 lcf_cts <- lcf_cts %>%
   mutate(type = factor(type, levels=c("cDC2", "pDC", "B", "M")))
 
-line_width <- 1 / ggp2_magic_number 
+line_width <- 1 / ggp2_magic_number
 
 lcf_plot <- ggplot(lcf_cts) +
   geom_hline(yintercept = 0, linewidth=line_width, color="gray") +
@@ -120,13 +121,11 @@ lcf_plot <- ggplot(lcf_cts) +
         panel.border = element_blank(),
         axis.text = element_text(size = default_pointsize, family = default_font, colour = "black"),
         axis.title = element_text(size = default_pointsize, family = default_font),
-        legend.position="none")
-        #legend.position="top",
-        #legend.title=element_blank(),
-        #text = element_text(size = default_pointsize, family = default_font, colour = "black"),
-        #legend.key.size = unit(0.5, "lines"),
-        #legend.text = element_text(size = default_pointsize - 1, family = default_font, colour = "black"),
-        #legend.justification = c("left", "top"))
+        legend.position="none") +
+  geom_magnify(from = c(0, 40, 0, 0.25), to = c(100, 212, -0.85, -0.15), shape = "rect",
+               expand = 0, proj.linetype=2,
+               colour="black", linewidth=line_width / 2)
+
 
 lcf_plot
 

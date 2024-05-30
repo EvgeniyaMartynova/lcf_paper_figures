@@ -6,7 +6,6 @@ library(lcfstat)
 library(spatstat)
 library(ggplot2)
 library(ggmagnify)
-library(grid)
 
 source("../settings.R")
 source("../utils_lcf.R")

@@ -7,7 +7,7 @@ source("../settings.R")
 
 h_color <- "#D6984D"
 pcf_color <- "#008F0C"
-f_color <- "#4A16DB"
+lcf_color <- "#4A16DB"
 
 file_path_template <- "data/Calibration_S%s_PN%s.csv"
 
@@ -78,15 +78,15 @@ calibration_p <- ggplot(calibration_df_glob) +
   geom_ribbon(aes(x=sl, ymin = low, ymax = high, fill=stat), alpha = 0.2) +
   geom_text(aes(x=x, y=y1, label = label, hjust = 0), data = labels_df, parse = T,
             size=(default_pointsize - 1) * gtext_magic_number, family=default_font ) +
-  scale_colour_manual(values = c(h_color, pcf_color, f_color)) +
-  scale_fill_manual(values = c(h_color, pcf_color, f_color)) +
-  geom_abline(intercept=0, slope=1, color="black", linewidth=line_width)  +
+  scale_colour_manual(values = c(h_color, pcf_color, lcf_color)) +
+  scale_fill_manual(values = c(h_color, pcf_color, lcf_color)) +
+  geom_abline(intercept=0, slope=1, colour="black", linewidth=line_width)  +
   facet_grid(area ~ pn, labeller=grid_labeller, scales = "free_x") +
   scale_x_log10(breaks = breaks, labels = axes_labels, expand = expansion_xy, limits=x_lim) +
   scale_y_log10(breaks = breaks, labels = axes_labels,  expand = expansion_xy,  limits=y_lim) +
   theme_bw(base_size = default_pointsize, base_family = default_font) +
-  ylab("Type I error") +
-  xlab("Significance level") +
+  ylab(expression(log[10]~"Type I error")) +
+  xlab(expression(log[10]~"Significance level")) +
   theme(plot.margin = margin(0, 0, 0.5, 0.5),
         legend.box.margin = margin(0, 0, 0, 0),
         legend.margin = margin(0, 0, 0, 0),
