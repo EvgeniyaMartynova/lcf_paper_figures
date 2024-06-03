@@ -348,7 +348,7 @@ lcf_p <- ggplot(lcf_df) +
   theme_bw(base_size = default_pointsize, base_family = default_font) +
   ylab("LCF") +
   xlab("r") +
-  theme(plot.margin = margin(5, 10, 5, 2.5),
+  theme(plot.margin = margin(3, 8, 0, 0),
         legend.title=element_blank(),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
@@ -356,16 +356,15 @@ lcf_p <- ggplot(lcf_df) +
         axis.text = element_text(size = default_pointsize, family = default_font, colour = "black"),
         axis.line.y = element_line(colour = "black", linewidth=line_width),
         axis.line.x = element_line(colour = "black", linewidth=line_width),
-        axis.title.y = element_text(angle=0, vjust=0.5),
         axis.ticks.y = element_line(colour = "black", linewidth=line_width),
         axis.ticks.x = element_line(colour = "black", linewidth=line_width),
         legend.position="none")
 
-pdf_out(file.path(output_folder, "LCF_plot.pdf"), width=1.6, height=1.6)
+pdf_out(file.path(output_folder, "LCF_plot.pdf"), width=1.6, height=1.15)
 print(lcf_p)
 dev.off()
 
-# Calculate H function for point patterns
+  # Calculate H function for point patterns
 random_h_df <- h_func(rand_pp, rmax=rmax, correction="Ripley")
 random_h_df <- random_h_df %>%
   dplyr::select(-theo) %>%
@@ -400,7 +399,7 @@ h_p <- ggplot(h_df) +
   theme_bw(base_size = default_pointsize, base_family = default_font) +
   ylab("H") +
   xlab("r") +
-  theme(plot.margin = margin(5, 10, 5, 2.5),
+  theme(plot.margin = margin(3, 8, 0, 0),
         legend.title=element_blank(),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
@@ -408,17 +407,17 @@ h_p <- ggplot(h_df) +
         axis.text = element_text(size = default_pointsize, family = default_font, colour = "black"),
         axis.line.y = element_line(colour = "black", linewidth=line_width),
         axis.line.x = element_line(colour = "black", linewidth=line_width),
-        axis.title.y = element_text(angle=0, vjust=0.5),
         axis.ticks.y = element_line(colour = "black", linewidth=line_width),
         legend.position="none")
 
 
-pdf_out(file.path(output_folder, "H-func.pdf"), width=1.6, height=1.6)
+pdf_out(file.path(output_folder, "H-func.pdf"), width=1.6, height=1.15)
 print(h_p)
 dev.off()
 
 
-pdf_out(file.path(output_folder, "funcs.pdf"), width=3.3, height=1.6)
-print(ggarrange(h_p, lcf_p, ncol = 2, nrow=1, newpage = FALSE))
+pdf_out(file.path(output_folder, "funcs.pdf"), width=3.3, height=1.15)
+#print(ggarrange(h_p, lcf_p, ncol = 2, nrow=1, newpage = FALSE))
+ggarrange(h_p, lcf_p, ncol = 2, nrow=1, newpage = FALSE)
 dev.off()
 

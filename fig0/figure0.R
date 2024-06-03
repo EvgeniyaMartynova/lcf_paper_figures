@@ -19,7 +19,6 @@ plot_sf <- function(sf_df,
                     add_xaxis = FALSE,
                     add_facet_labels = FALSE,
                     h_lines = NULL,
-                    y_lab_hjust = NULL,
                     y_lab_vjust = NULL) {
 
   if (is.null(ylim)) {
@@ -58,7 +57,7 @@ plot_sf <- function(sf_df,
     theme_bw(base_size = default_pointsize, base_family = default_font) +
     ylab(fun_name) +
     xlab(x_lab) +
-    theme(plot.margin = margin(2, 2, 0, 4),
+    theme(plot.margin = margin(0, 2, 0, 4),
           panel.spacing = unit(0.5, "lines"),
           strip.background = element_blank(),
           strip.text.x = strip_text,
@@ -66,7 +65,7 @@ plot_sf <- function(sf_df,
           panel.grid.major = element_blank(),
           panel.grid.minor = element_blank(),
           panel.border = element_blank(),
-          axis.title.y = element_text(hjust = y_lab_hjust, vjust = y_lab_vjust),
+          axis.title.y = element_text(vjust = y_lab_vjust),
           axis.text.y = element_text(size = default_pointsize, family = default_font,
                                      colour = "black"),
           axis.text.x = text_x,
@@ -205,7 +204,7 @@ for (i in 1:length(square_sides)) {
     # Change window to be the target domain
     pdf_out(file.path(img_folder, "Max_clust.pdf"), width = pdf_side, height = pdf_side)
     save_pp_as_pdf(pp_mc, clustered_color, square_df, scale=0.1,
-                   scale_offset=0.075, scale_lwd = 3, text_height=0.1, cex=0.5)
+                   scale_offset=0.05, scale_lwd = 3, text_height=0.1, cex=0.5)
     dev.off()
 
     # Random
@@ -227,46 +226,34 @@ k_df <- k_df %>%
 
 write.csv(k_df, file.path(data_folder, "k.csv"))
 
-# To insert insets into plots, lower y limit is artificially decreased to create empty space
-k_ylim <- c(-3.25, 4)
-# The middle of real K range
-k_middle <- 2
-
-# We want ylab title to be in the middle of the "real" K range
-hjust <- (k_middle - k_ylim[1]) / (k_ylim[2] - k_ylim[1])
+k_ylim <- c(-0.02, 4)
 
 k_p <- plot_sf(k_df, "K", breaks_y = c(0, 1, 2, 4), labels_y = c("0.0", "1.0", "2.0", "4.0"),
-               ylim = k_ylim, add_facet_labels=TRUE, y_lab_hjust = hjust)
+               ylim = k_ylim, add_facet_labels=TRUE)
 
 # Add squared inset
-magnify_data <- data.frame(square_s = factor(c("1", "2", "4"), levels = c("1", "2", "4")))
+magnify_data <- data.frame(square_s = factor(c("1"), levels = c("1", "2", "4")))
 
 # Magnify the same area for each observation window
-inset_min <- -0.02
+inset_min <- -0.015
 inset_max <- 0.408
 
-magnify_data$from <- list(c(inset_min, inset_max, inset_min, inset_max),
-                          c(inset_min, inset_max, inset_min, inset_max),
-                          c(inset_min, inset_max, inset_min, inset_max))
+magnify_data$from <- list(c(inset_min, inset_max, inset_min, inset_max))
 
 # Make approximately squared target area, same y, x depends on the rmax
-range_share <- 0.625
+range_share <- 0.575
 
 # We want the inset to be in the middle of x scale and at the bottom of y scale
 # Y is the same for all observation windows, manually picked ymin that looks good
-ymax <- -0.75
+ymax <- 4
 ymin <- ymax - 4 * range_share
 
-magnify_data$to <- vector(mode="list", length = 3)
 # X is depends on the observation window size
-for (i in 1:length(square_sides)) {
-  # X
-  rmax <- square_sides[i] * sqrt(1 / pi)
-  xmin <- rmax * (1 - range_share) / 2
-  xmax <- xmin + rmax * range_share
+rmax <- square_sides[1] * sqrt(1 / pi)
+xmin <- rmax * (1 - range_share) / 2
+xmax <- xmin + rmax * range_share
 
-  magnify_data$to[[i]] <- c(xmin, xmax, ymin, ymax)
-}
+magnify_data$to <- list(c(xmin, xmax, ymin, ymax))
 
 k_p_ins <- k_p +
   scale_colour_manual(values = c(clustered_color, dispersed_color, random_color)) +
@@ -284,7 +271,7 @@ write.csv(h1_df, file.path(data_folder, "h1.csv"))
 ylim_h1 <- c(min(h1_df$sf), 1)
 
 h1_p <- plot_sf(h1_df, "H1", breaks_y = c(0, 0.5, 1), labels_y = c("0.0", "0.5", "1.0"),
-                ylim = ylim_h1, h_lines = c(1))
+                ylim = ylim_h1)
 h1_p
 
 # PCF
@@ -319,18 +306,13 @@ lcf_p <- plot_sf(lcf_df, "LCF", breaks_y = c(-1, 0, 1), labels_y = c("-1.0", "0.
 lcf_p
 
 # Plot together
-# We want y axis of different summary functions to be equal length
-# K's plot should be made larger for this since it contains insets
-k_coef <- (k_ylim[2] - k_ylim[1]) / k_ylim[2]
-
 # Inches
 facet_height <- 0.9
 facet_space <- 0.02
 labels_height <- 0.03
-height <- facet_height * k_coef + 3 * facet_height + 4 * facet_space + labels_height
+height <- 4 * facet_height + 4 * facet_space + labels_height
 
 pdf_out(file.path(img_folder, "sfs_plot.pdf"), width=width, height=height)
 ggarrange(k_p_ins, h1_p, pcf_p, lcf_p,
-          ncol = 1, heights = c(k_coef, 1, 1, 1),
-          newpage = FALSE)
+          ncol = 1, newpage = FALSE)
 dev.off()

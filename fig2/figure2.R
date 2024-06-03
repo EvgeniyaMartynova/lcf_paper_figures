@@ -40,7 +40,7 @@ rmax_plot <- square_side / 4
 
 # Display window params
 # Based on the pattern with 3 clusters
-wh_ratio <- 2.1 / sqrt(3)
+hw_ratio <- 0.73 # 2.1 / sqrt(3)
 
 expansion_y <- expansion(mult = 0.02, add = 0)
 expansion_x <- expansion(mult = 0.005, add = 0)
@@ -148,7 +148,7 @@ plot_lcf <- function(df, domain_rad, rmax, col,
 
     line_y <- element_line(colour = "black", linewidth=lwd)
     ticks_y <- element_line(colour = "black", linewidth=lwd)
-    title_y <- element_text(angle=0, vjust=0.5, size = default_pointsize, family = default_font, colour = "black")
+    title_y <- element_text(size = default_pointsize, family = default_font, colour = "black")
     text_y <- element_text(size = default_pointsize, family = default_font, colour = "black")
   } else {
     line_y <- element_blank()
@@ -165,7 +165,7 @@ plot_lcf <- function(df, domain_rad, rmax, col,
   }
 
   lcf_p <- lcf_p +
-    theme(plot.margin = margin(7.5, 12, 0, 2.5),
+    theme(plot.margin = margin(8, 4, 0, 2),
           legend.title=element_blank(),
           panel.grid.major = element_blank(),
           panel.grid.minor = element_blank(),
@@ -188,8 +188,10 @@ plot_lcf <- function(df, domain_rad, rmax, col,
 cluster_dist <- 120
 column_distance <- sqrt(cluster_dist^2 - (cluster_dist / 2)^2)
 
-disp_rect_width <- 3 * column_distance + 2 * rad
-disp_rect_height <- disp_rect_width / wh_ratio
+padding <- 75
+disp_rect_width <- cluster_dist + 2 * rad + 2 * padding  #3 * column_distance + 2 * rad
+disp_rect_height <- disp_rect_width * hw_ratio
+#hw_ratio <- disp_rect_height / disp_rect_width
 
 # Add more space around border
 disp_rect_width <- disp_rect_width + 4
@@ -207,11 +209,11 @@ three_clust_disp_df <- make_rect_df(disp_rect_width, disp_rect_height)
 three_clust_pp_file <- file.path(output_folder, "Three clusters.pdf")
 x_lim <- c(min(three_clust_disp_df$X), max(three_clust_disp_df$X))
 y_lim <- c(min(three_clust_disp_df$Y), max(three_clust_disp_df$Y))
-wh_ratio <- (y_lim[2] - y_lim[1]) / (x_lim[2] - x_lim[1])
+hw_ratio <- (y_lim[2] - y_lim[1]) / (x_lim[2] - x_lim[1])
 pdf_width <- 1.5
-pdf_out(three_clust_pp_file, width = pdf_width, height = pdf_width * wh_ratio)
+pdf_out(three_clust_pp_file, width = pdf_width, height = pdf_width * hw_ratio)
 save_pp_as_pdf(three_clust_pp, clustered_color, three_clust_disp_df, scale=50,
-               scale_offset=20, cex=0.5)
+               scale_offset=12.5, cex=0.5)
 dev.off()
 
 # Matern cluster
@@ -243,7 +245,7 @@ mat_clust_pp_subset <- ppp(mat_clust_pp$x, mat_clust_pp$y, window = mat_clust_wi
 # Save to file
 mat_clust_pp_file <- file.path(output_folder, "Mattern Cluster.pdf")
 
-pdf_out(mat_clust_pp_file, width = pdf_width, height = pdf_width * wh_ratio)
+pdf_out(mat_clust_pp_file, width = pdf_width, height = pdf_width * hw_ratio)
 save_pp_as_pdf(mat_clust_pp_subset, clustered_color, mat_clust_disp_df, cex=0.5)
 dev.off()
 
@@ -326,13 +328,17 @@ pcf_matern_p <- plot_lcf(pcf_df_mat_clust, rad, rmax, clustered_color,
                          show_x_axis=TRUE)
 
 
-pdf_out(file.path(output_folder, "funcs.pdf"), width=3.3, height=3.3)
-print(ggarrange(lcf_three_clust_p, lcf_matern_p,
-                h_three_clust_p, h_matern_p,
-                pcf_three_clust_p, pcf_matern_p,
-                ncol = 2,
-                bottom=textGrob("r", gp = gpar(fontsize=default_pointsize, fontfamily=default_font)),
-                newpage = FALSE))
+row_height <- 0.92
+row_space <- 0.02
+height <- row_height * 3 + 2 * row_space
+
+pdf_out(file.path(output_folder, "funcs.pdf"), width=3.3, height=height)
+ggarrange(lcf_three_clust_p, lcf_matern_p,
+          h_three_clust_p, h_matern_p,
+          pcf_three_clust_p, pcf_matern_p,
+          ncol = 2,
+          bottom=textGrob("r", gp = gpar(fontsize=default_pointsize, fontfamily=default_font)),
+          newpage = FALSE)
 dev.off()
 
 

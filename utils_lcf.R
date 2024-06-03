@@ -271,7 +271,7 @@ pc_func <- function(pp, ...) {
 }
 
 save_pp_as_pdf <- function(pp, col, disp_window_df, clust_rad=NULL, clust_o_x=0, clust_o_y=0, cex=1,
-                           scale=NULL, scale_offset=NULL, scale_lwd=3, text_height=25) {
+                           scale=NULL, scale_offset=NULL, scale_lwd=3, text_height=20) {
   points <- data.frame(X=pp$x, Y=pp$y)
   x_lim <- c(min(disp_window_df$X), max(disp_window_df$X))
   y_lim <- c(min(disp_window_df$Y), max(disp_window_df$Y))
@@ -298,7 +298,7 @@ save_pp_as_pdf <- function(pp, col, disp_window_df, clust_rad=NULL, clust_o_x=0,
     seg_x0 <- x_lim[1] + scale_offset
     seg_x1 <- seg_x0 + scale
     # For Y axis offset should be negative
-    seg_y0 <- y_lim[1] + scale_offset * 1.3 + text_height
+    seg_y0 <- y_lim[2] - scale_offset
     seg_y1 <- seg_y0
 
     segments(seg_x0, seg_y0, x1 = seg_x1, y1 = seg_y1,
