@@ -204,7 +204,8 @@ for (i in 1:length(square_sides)) {
     # Change window to be the target domain
     pdf_out(file.path(img_folder, "Max_clust.pdf"), width = pdf_side, height = pdf_side)
     save_pp_as_pdf(pp_mc, clustered_color, square_df, scale=0.1,
-                   scale_offset=0.05, scale_lwd = 3, text_height=0.1, cex=0.5)
+                   scale_offset=0.05, scale_lwd = 3, scale_right=TRUE,
+                   text_height=0.1, text_width=0.32, cex=0.5)
     dev.off()
 
     # Random

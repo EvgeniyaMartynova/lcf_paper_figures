@@ -271,7 +271,8 @@ pc_func <- function(pp, ...) {
 }
 
 save_pp_as_pdf <- function(pp, col, disp_window_df, clust_rad=NULL, clust_o_x=0, clust_o_y=0, cex=1,
-                           scale=NULL, scale_offset=NULL, scale_lwd=3, text_height=20) {
+                           scale=NULL, scale_offset=NULL, scale_lwd=3, scale_right=FALSE,
+                           text_height=20, text_width=50) {
   points <- data.frame(X=pp$x, Y=pp$y)
   x_lim <- c(min(disp_window_df$X), max(disp_window_df$X))
   y_lim <- c(min(disp_window_df$Y), max(disp_window_df$Y))
@@ -295,7 +296,12 @@ save_pp_as_pdf <- function(pp, col, disp_window_df, clust_rad=NULL, clust_o_x=0,
     domain_seg_y2 <- clust_o_y + sin(angle2) * draw_rad
   }
   if (!is.null(scale) && !is.null(scale_offset)) {
-    seg_x0 <- x_lim[1] + scale_offset
+    if (scale_right) {
+      seg_x0 <- x_lim[2] - scale_offset - scale
+    } else {
+      seg_x0 <- x_lim[1] + scale_offset
+    }
+
     seg_x1 <- seg_x0 + scale
     # For Y axis offset should be negative
     seg_y0 <- y_lim[2] - scale_offset
@@ -305,6 +311,9 @@ save_pp_as_pdf <- function(pp, col, disp_window_df, clust_rad=NULL, clust_o_x=0,
              col = "black", lwd=scale_lwd, lend=2)
 
     label_x <- seg_x0
+    if (scale_right) {
+      label_x <- label_x - text_width
+    }
     label_y <- seg_y0 - text_height
     text(label_x, label_y, as.expression(bquote(bold(.(as.character(scale)))~bold(units))), cex=0.675, adj = 0)
   }
