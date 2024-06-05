@@ -1,0 +1,87 @@
+\documentclass[9pt]{article}
+
+%\documentclass[a4paper]{article}
+%\usepackage[margin=.7in]{geometry}
+
+\usepackage{fontspec}
+\setmainfont{Helvetica Neue Light}
+\usepackage{upgreek}
+
+\usepackage{tikz}
+\usetikzlibrary{positioning}
+
+
+\usepackage[active,tightpage]{preview}
+\PreviewEnvironment{tikzpicture}
+
+\newcommand\figf{\bfseries\normalsize}
+
+\definecolor{cdc2_color}{RGB}{239,59,44}
+\definecolor{pdc_color}{RGB}{42,153,78}
+\definecolor{b_color}{RGB}{204,0,163}
+\definecolor{m_color}{RGB}{204,186,0}
+
+\definecolor{air_color}{RGB}{166,54,3}
+\definecolor{waste_color}{RGB}{8,81,156}
+
+\begin{document}
+
+\begin{tikzpicture}[]
+
+\footnotesize
+
+\node [anchor=north west] at (0, -0.25) {\figf A}; 
+\node [anchor=north west] at (0.3,-0.25) {\includegraphics[width=2.54cm]{img/tmas/cDC2_vis.pdf}};
+\node [anchor=north west] at (2.84,-0.25) {\includegraphics[width=2.54cm]{img/tmas/pDC_vis.pdf}};
+\node [anchor=north west] at (0.3, -2.75) {\includegraphics[width=2.54cm]{img/tmas/B_vis.pdf}};
+\node [anchor=north west] at (2.84, -2.75) {\includegraphics[width=2.54cm]{img/tmas/M_vis.pdf}};
+
+
+\node [anchor=north west] at (5.4, -0.25) {\includegraphics[width=5.33cm]{img/tmas/TMA9_2A_Scan1_T99-11009_IF_1_all_LCF_DC.pdf}};
+
+\node [anchor=north west] at (11, -0.25) {\figf B}; 
+\node [anchor=north west] at (11,-0.25) {\includegraphics[width=2.1cm]{img/facilities/air_vis_ohio.pdf}};
+\node [anchor=north west] at (11,-2.65) {\includegraphics[width=2.1cm]{img/facilities/waste_vis_ohio.pdf}};
+
+\node [anchor=north west] at (13.2, -0.25) {\includegraphics[width=5.33cm]{img/facilities/all_LCF_facilities.pdf}};
+
+\node [anchor=north west] (cdc2_title) at (2.85, -5.65) {cDC2};
+\node [anchor=north west] (pdc_title) at ([xshift=0.58cm, yshift=0]cdc2_title.north east) {pDC};
+\node [anchor=north west] (b_title) at ([xshift=0.58cm, yshift=0]pdc_title.north east) {B cell};
+\node [anchor=north west] (m_title) at ([xshift=0.58cm, yshift=0]b_title.north east) {Myeloid};
+
+\draw [line width=0.0353cm, cdc2_color] ([xshift=-0.55cm, yshift=0]cdc2_title.west) -- ([xshift=-0.075cm, yshift=0]cdc2_title.west);
+\draw [line width=0.0353cm, pdc_color] ([xshift=-0.55cm, yshift=0]pdc_title.west) -- ([xshift=-0.075cm, yshift=0]pdc_title.west);
+\draw [line width=0.0353cm, b_color] ([xshift=-0.55cm, yshift=0]b_title.west) -- ([xshift=-0.075cm, yshift=0]b_title.west);
+\draw [line width=0.0353cm, m_color] ([xshift=-0.55cm, yshift=0]m_title.west) -- ([xshift=-0.075cm, yshift=0]m_title.west);
+
+\fill [cdc2_color] ([xshift=-3mm]cdc2_title.west) circle (0.8mm);
+\fill [pdc_color] ([xshift=-3mm]pdc_title.west) circle (0.8mm);
+\fill [b_color] ([xshift=-3mm]b_title.west) circle (0.8mm);
+\fill [m_color] ([xshift=-3mm]m_title.west) circle (0.8mm);
+
+\node [anchor=north west] at (0, -6.15) {\figf C}; 
+\node [anchor=north west] at (0, -6.5) {\includegraphics[width=5.33cm]{img/tmas/LFC_AUC_beeswarm.pdf}};
+
+\node [anchor=north west] at (5.43, -6.15) {\figf D}; 
+\node [anchor=north west] at (5.43, -6.5) {\includegraphics[width=5.33cm]{img/tmas/LCF_AUC_vs_pn.pdf}};
+
+\node [anchor=north west] (air_title) at (14.0, -5.65) {Air};
+\node [anchor=north west] (waste_title) at ([xshift=0.58cm, yshift=0]air_title.north east) {Waste};
+
+\draw [line width=0.0353cm, air_color] ([xshift=-0.55cm, yshift=0]air_title.west) -- ([xshift=-0.075cm, yshift=0]air_title.west);
+\draw [line width=0.0353cm, waste_color] ([xshift=-0.55cm, yshift=0]waste_title.west) -- ([xshift=-0.075cm, yshift=0]waste_title.west);
+
+\fill [air_color] ([xshift=-3mm]air_title.west) circle (0.8mm);
+\fill [waste_color] ([xshift=-3mm]waste_title.west) circle (0.8mm);
+
+\node [anchor=north west] at (10.86, -6.15) {\figf E}; 
+\node [anchor=north west] at (10.86, -6.5) {\includegraphics[width=3.81cm]{img/facilities/LCF_AUC_beeswarm.pdf}};
+
+\node [anchor=north west] at (14.52, -6.15) {\figf F}; 
+\node [anchor=north west] at (14.52, -6.5) {\includegraphics[width=3.81cm]{img/facilities/LCF_AUC_vs_pn.pdf}};
+
+
+\end{tikzpicture}
+
+\end{document}

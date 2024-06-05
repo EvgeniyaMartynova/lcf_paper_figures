@@ -1,344 +1,319 @@
 rm(list=ls())
 
+library(RColorBrewer)
+library(dplyr)
 library(lcfstat)
 library(spatstat)
-library(dplyr)
-library(MASS)
-library(egg)
-library(RColorBrewer)
-library(RANN)
-library(grid)
+library(ggplot2)
+library(ggmagnify)
 
 source("../settings.R")
 source("../utils_lcf.R")
 
-seed <- 1901
-set.seed(seed)
 
-# Output folder
-output_folder <- "img"
-dir.create(output_folder, showWarnings = FALSE)
+plot_sf <- function(sf_df,
+                    fun_name,
+                    breaks_y = waiver(),
+                    labels_y = waiver(),
+                    ylim=NULL,
+                    add_xaxis = FALSE,
+                    add_facet_labels = FALSE,
+                    h_lines = NULL,
+                    y_lab_vjust = NULL) {
 
-# Clustered patterns
-num_points <- 2000
-
-clustered_color <- "#DB165C"
-clustered_color_tr <- alpha(clustered_color, alpha=0.3)
-
-# Window - square
-square_side <- 1000
-# TODO: get rid of the square_df and only use square_window?
-square_df <- make_square_df(square_side)
-square_window <- window_from_roi(square_df)
-square_a <- square_side^2
-
-# Domain radius, same for all patterns
-rad <- 25
-circle_a <- pi * rad^2
-
-rmax_plot <- square_side / 4
-
-# Display window params
-# Based on the pattern with 3 clusters
-hw_ratio <- 0.73 # 2.1 / sqrt(3)
-
-expansion_y <- expansion(mult = 0.02, add = 0)
-expansion_x <- expansion(mult = 0.005, add = 0)
-
-line_width <- 1 / ggp2_magic_number
-
-ppunif_from_clust_centers <- function(centers, clust_rad, clust_int, square_window) {
-
-  # Points are distributed uniformly inside clusters
-  xs <- NULL
-  ys <- NULL
-
-  for (i in 1:nrow(centers)) {
-    xo <- centers$x[i]
-    yo <- centers$y[i]
-
-    circle_df <- make_circle_df(xo, yo, clust_rad)
-    cluster_window <- window_from_roi(circle_df)
-    pp <- rpoispp(clust_int, win = cluster_window, nsim=1)
-
-    x <- pp[["x"]]
-    xs <- c(xs, x)
-
-    y <- pp[["y"]]
-    ys <- c(ys, y)
+  if (is.null(ylim)) {
+    ylim <- c(min(sf_df$sf), max(sf_df$sf))
   }
 
-  pp <- ppp(xs, ys, window = square_window)
-  pp
-}
+  breaks_x <- c(0, 0.5, 1)
+  labels_x <- c("0", "0.5", "1")
 
-get_max_dens_point <- function(pp, x_lim=NULL, y_lim=NULL, n=50) {
-
-  kde <- kde2d(pp$x, pp$y, n = n)
-
-  if (!is.null(x_lim)) {
-    inds_x_vis <- which((kde$x > x_lim[1]) & (kde$x < x_lim[2]))
-  } else {
-    inds_x_vis <- 1:length(kde$x)
-  }
-
-  if (!is.null(y_lim)) {
-    inds_y_vis <- which((kde$y > y_lim[1]) & (kde$y < y_lim[2]))
-  } else {
-    inds_y_vis <- 1:length(kde$y)
-  }
-
-  kde_z_vis <- kde$z[inds_x_vis, inds_y_vis]
-
-  max_inds_vis <- which(kde_z_vis == max(kde_z_vis), arr.ind = TRUE)
-
-  argmax_x_vis <- as.numeric(max_inds_vis[1, "row"])
-  argmax_y_vis <- as.numeric(max_inds_vis[1, "col"])
-
-  argmax_x <- inds_x_vis[argmax_x_vis]
-  argmax_y <- inds_y_vis[argmax_y_vis]
-
-  x_max <- kde$x[argmax_x]
-  y_max <- kde$y[argmax_y]
-  list(x=x_max, y=y_max)
-}
-
-plot_lcf <- function(df, domain_rad, rmax, col,
-                     lwd, y_lab,
-                     int_dists=NULL,
-                     x_breaks=waiver(),
-                     x_labels=waiver(),
-                     y_random=0,
-                     y_lim=NULL,
-                     y_breaks=waiver(),
-                     show_x_axis=FALSE,
-                     show_y_axis=FALSE) {
-
-  rmax_plot <- max(df$r)
-
-  if (is.null(x_breaks) && show_x_axis) {
-    x_breaks <- c(0, domain_rad * 2, rmax/2, rmax)
-  }
-
-  if (is.null(x_labels) && show_x_axis) {
-    x_labels <- as.integer(round(x_breaks))
-  }
-
-  lcf_p <- ggplot(df) +
-    geom_hline(yintercept = y_random, col = "gray", linewidth=lwd) +
-    geom_line(aes(x=r, y=iso, col=col), linewidth=lwd) +
-    scale_colour_manual(values = c(col, "gray")) +
-    scale_x_continuous(breaks = x_breaks, labels = x_labels, limits=c(0, rmax_plot), expand = expansion_x) +
-    scale_y_continuous(breaks = y_breaks, limits=y_lim, expand = expansion_y) +
-    theme_bw(base_size = default_pointsize, base_family = default_font)
-
-  if (show_x_axis) {
-    line_x <- element_line(colour = "black", linewidth=lwd)
-    ticks_x <- element_line(colour = "black", linewidth=lwd)
+  if (add_xaxis) {
+    x_lab <- "r"
     text_x <- element_text(size = default_pointsize, family = default_font, colour = "black")
+    ticks_x <- element_line(colour = "black", linewidth=line_width)
+    line_x <- element_line(colour = "black", linewidth=line_width)
   } else {
-    line_x <- element_blank()
-    ticks_x <- element_blank()
+    x_lab <- ""
     text_x <- element_blank()
+    ticks_x <- element_blank()
+    line_x <- element_blank()
   }
 
-  if (show_y_axis) {
-    lcf_p <- lcf_p +
-      ylab(y_lab)
-
-    line_y <- element_line(colour = "black", linewidth=lwd)
-    ticks_y <- element_line(colour = "black", linewidth=lwd)
-    title_y <- element_text(size = default_pointsize, family = default_font, colour = "black")
-    text_y <- element_text(size = default_pointsize, family = default_font, colour = "black")
+  if (add_facet_labels) {
+    strip_text <- element_text(size = default_pointsize, family = default_font, colour = "black")
   } else {
-    line_y <- element_blank()
-    ticks_y <- element_blank()
-    title_y <- element_blank()
-    text_y <- element_blank()
+    strip_text <- element_blank()
   }
 
-  if (!is.null(int_dists)) {
-    for (dist in int_dists) {
-      lcf_p <- lcf_p +
-        geom_vline(xintercept = dist, linewidth=lwd, col="black", linetype="dashed")
-    }
-  }
+  square_labeller <- label_bquote(cols = "|W|="~.(as.numeric(levels(square_s))[square_s]))
 
-  lcf_p <- lcf_p +
-    theme(plot.margin = margin(8, 4, 0, 2),
+  sf_p <- ggplot(sf_df) +
+    facet_wrap(~square_s, scales = "free_x", strip.position = "top", labeller = square_labeller, nrow=1) +
+    geom_line(aes(x=r, y=sf, col=pattern), linewidth=line_width) +
+    scale_colour_manual(values = c(clustered_color, dispersed_color, random_color)) +
+    scale_x_continuous(breaks = breaks_x, labels=labels_x, expand = stand_expansion) +
+    scale_y_continuous(breaks = breaks_y, labels=labels_y, limits=ylim, expand = stand_expansion) +
+    theme_bw(base_size = default_pointsize, base_family = default_font) +
+    ylab(fun_name) +
+    xlab(x_lab) +
+    theme(plot.margin = margin(0, 2, 0, 4),
+          panel.spacing = unit(0.5, "lines"),
+          strip.background = element_blank(),
+          strip.text.x = strip_text,
           legend.title=element_blank(),
           panel.grid.major = element_blank(),
           panel.grid.minor = element_blank(),
           panel.border = element_blank(),
-          axis.text.y = text_y,
-          axis.title.y = title_y,
-          axis.line.y = line_y,
-          axis.ticks.y = ticks_y,
+          axis.title.y = element_text(vjust = y_lab_vjust),
+          axis.text.y = element_text(size = default_pointsize, family = default_font,
+                                     colour = "black"),
           axis.text.x = text_x,
-          axis.title.x = element_blank(),
+          axis.line.y = element_line(colour = "black", linewidth=line_width),
           axis.line.x = line_x,
+          axis.ticks.y = element_line(colour = "black", linewidth=line_width),
           axis.ticks.x = ticks_x,
           legend.position="none")
 
-  lcf_p
+  if (!is.null(h_lines)) {
+    for (h_line in h_lines) {
+      sf_p <- sf_p +
+        geom_hline(yintercept = h_line, linewidth=line_width * 0.75, col="gray")
+    }
+  }
+
+  sf_p
 }
 
+set.seed(2906)
 
-# Theree clusters
-cluster_dist <- 120
-column_distance <- sqrt(cluster_dist^2 - (cluster_dist / 2)^2)
+img_folder <- "img"
+dir.create(img_folder, showWarnings = FALSE)
 
-padding <- 75
-disp_rect_width <- cluster_dist + 2 * rad + 2 * padding  #3 * column_distance + 2 * rad
-disp_rect_height <- disp_rect_width * hw_ratio
-#hw_ratio <- disp_rect_height / disp_rect_width
+data_folder <- "data"
+dir.create(data_folder, showWarnings = FALSE)
 
-# Add more space around border
-disp_rect_width <- disp_rect_width + 4
+square_sides <- c(1, sqrt(2), 2)
 
-cluster_centers <- data.frame(x=c(-cluster_dist / 2, 0, cluster_dist / 2),
-                              y=c(-column_distance/2, column_distance/2, -column_distance/2))
-clust_intensity <- num_points / 3 / circle_a
+clust_radius <- 0.05
+disp_distance <- 0.15
 
-three_clust_pp <- ppunif_from_clust_centers(cluster_centers, rad, clust_intensity, square_window)
+# Plotting parameters
+random_color <- "#4EACD7"
+clustered_color <- "#DB165C"
+dispersed_color <- "#DBCB16"
 
-# Make display rectangle
-three_clust_disp_df <- make_rect_df(disp_rect_width, disp_rect_height)
+width <- 3.3
+height <- 0.9
 
-# Save to file
-three_clust_pp_file <- file.path(output_folder, "Three clusters.pdf")
-x_lim <- c(min(three_clust_disp_df$X), max(three_clust_disp_df$X))
-y_lim <- c(min(three_clust_disp_df$Y), max(three_clust_disp_df$Y))
-hw_ratio <- (y_lim[2] - y_lim[1]) / (x_lim[2] - x_lim[1])
-pdf_width <- 1.5
-pdf_out(three_clust_pp_file, width = pdf_width, height = pdf_width * hw_ratio)
-save_pp_as_pdf(three_clust_pp, clustered_color, three_clust_disp_df, scale=50,
-               scale_offset=12.5, cex=0.5)
+line_width <- 1 / ggp2_magic_number
+stand_expansion <- expansion(mult = 0.01, add = 0)
+
+expansion_x <- expansion(mult = 0.01, add = 0)
+expansion_y <- expansion(mult = 0.02, add = 0)
+
+# Point patterns parameters
+# Maximum clustering
+num_points <- 200
+# Generate random pattern in a cluster domain
+circle <- disc(radius = clust_radius)
+circle_a <- spatstat.geom::area(circle)
+intensity_mc <- num_points / circle_a
+pp_loc <- rpoispp(intensity_mc, win=circle)
+
+# Random
+intensity_rand <- 200
+
+# Summary functions' parameters
+correction <- "Ripley"
+dim_lims <- c(4, 50)
+
+k_df <- NULL
+pcf_df <- NULL
+lcf_df <- NULL
+
+steps_in <- 513
+
+lcf_mc_dims <- c(30, 40, 50)
+lcf_md_dims <- c(30, 45, 60)
+
+for (i in 1:length(square_sides)) {
+  square_side <- square_sides[i]
+  # Increase the number of bins for r
+  steps_r <- round(steps_in * square_side)
+
+  square_df <- make_square_df(square_side)
+  square_window <- window_from_roi(square_df)
+  square_area <- square_side^2
+
+  # Change window to be the target domain
+  pp_mc <- ppp(pp_loc$x, pp_loc$y, window = square_window)
+
+  # Random
+  pp_random <- rpoispp(intensity_rand, win=square_window)
+
+  # Maximum dispersion
+  column_distance <- sqrt(disp_distance^2 - (disp_distance / 2)^2)
+  grid_pp <- max_disp_pp(square_window, disp_distance)
+
+  rmax <- sqrt(square_area/pi)
+
+  # K
+  k_mc <- Kest(pp_mc, correction = correction, r = seq(0, rmax, length.out=steps_r))
+  k_rand <- Kest(pp_random, correction = correction, r = seq(0, rmax, length.out=steps_r))
+  k_md <- Kest(grid_pp, correction = correction, r = seq(0, rmax, length.out=steps_r))
+
+  k_df_ss <- data.frame(r=k_mc$r, sf = c(k_mc$iso, k_rand$iso, k_md$iso),
+                        pattern = c(rep("mc", nrow(k_mc)), rep("rand", nrow(k_rand)), rep("md", nrow(k_md))),
+                        square=square_side^2)
+
+  k_df <- rbind(k_df, k_df_ss)
+
+  # PCF
+  pcf_mc <- pcf(pp_mc, correction = correction, r = seq(0, rmax, length.out=steps_r))
+  pcf_rand <- pcf(pp_random, correction = correction, r = seq(0, rmax, length.out=steps_r))
+  pcf_md <- pcf(grid_pp, correction = correction, r = seq(0, rmax, length.out=steps_r))
+
+  # Remove infinity for plotting
+  pcf_mc_iso <- c(pcf_mc$iso[2], pcf_mc$iso[-1])
+  pcf_rand_iso <- c(pcf_rand$iso[2], pcf_rand$iso[-1])
+  pcf_md_iso <- c(pcf_md$iso[2], pcf_md$iso[-1])
+
+  pcf_df_ss <- data.frame(r=pcf_mc$r, sf = c(pcf_mc_iso, pcf_rand_iso, pcf_md_iso),
+                          pattern = c(rep("mc", nrow(pcf_mc)), rep("rand", nrow(pcf_rand)), rep("md", nrow(pcf_md))),
+                          square=square_side^2)
+
+  pcf_df <- rbind(pcf_df, pcf_df_ss)
+
+  # LCF
+  dim_mc <- lcf_mc_dims[i]
+  lcf_mc <- LCFest(pp_mc, correction = correction, r = seq(0, rmax, length.out=steps_r), dim=dim_mc)
+  lcf_rand <- LCFest(pp_random, correction = correction, r = seq(0, rmax, length.out=steps_r))
+  dim_md <- lcf_md_dims[i]
+  lcf_md <- LCFest(grid_pp, correction = correction, r = seq(0, rmax, length.out=steps_r), dim=dim_md)
+
+  lcf_df_ss <- data.frame(r=lcf_mc$r, sf = c(lcf_mc$iso, lcf_rand$iso, lcf_md$iso),
+                          pattern = c(rep("mc", nrow(lcf_mc)), rep("rand", nrow(lcf_rand)), rep("md", nrow(lcf_md))),
+                          square=square_side^2)
+
+  lcf_df <- rbind(lcf_df, lcf_df_ss)
+
+  # Visualize the point patterns
+  if (i == 1) {
+    pdf_side <- 1.05
+    # Change window to be the target domain
+    pdf_out(file.path(img_folder, "Max_clust.pdf"), width = pdf_side, height = pdf_side)
+    save_pp_as_pdf(pp_mc, clustered_color, square_df, scale=0.1,
+                   scale_offset=0.05, scale_lwd = 3, scale_right=TRUE,
+                   text_height=0.1, text_width=0.32, cex=0.5)
+    dev.off()
+
+    # Random
+    pdf_out(file.path(img_folder, "Rand.pdf"), width = pdf_side, height = pdf_side)
+    save_pp_as_pdf(pp_random, random_color, square_df, cex=0.5)
+    dev.off()
+
+    # Maximum dispersion
+    pdf_out(file.path(img_folder, "Max_disp.pdf"), width = pdf_side, height = pdf_side)
+    save_pp_as_pdf(grid_pp, dispersed_color, square_df, cex=0.5)
+    dev.off()
+  }
+}
+
+# Make plot of K-function
+k_df <- k_df %>%
+  mutate(pattern = as.factor(pattern),
+         square_s = factor(square, levels=c("1", "2", "4")))
+
+write.csv(k_df, file.path(data_folder, "k.csv"))
+
+k_ylim <- c(-0.02, 4)
+
+k_p <- plot_sf(k_df, "K", breaks_y = c(0, 1, 2, 4), labels_y = c("0.0", "1.0", "2.0", "4.0"),
+               ylim = k_ylim, add_facet_labels=TRUE)
+
+# Add squared inset
+magnify_data <- data.frame(square_s = factor(c("1"), levels = c("1", "2", "4")))
+
+# Magnify the same area for each observation window
+inset_min <- -0.015
+inset_max <- 0.408
+
+magnify_data$from <- list(c(inset_min, inset_max, inset_min, inset_max))
+
+# Make approximately squared target area, same y, x depends on the rmax
+range_share <- 0.575
+
+# We want the inset to be in the middle of x scale and at the bottom of y scale
+# Y is the same for all observation windows, manually picked ymin that looks good
+ymax <- 4
+ymin <- ymax - 4 * range_share
+
+# X is depends on the observation window size
+rmax <- square_sides[1] * sqrt(1 / pi)
+xmin <- rmax * (1 - range_share) / 2
+xmax <- xmin + rmax * range_share
+
+magnify_data$to <- list(c(xmin, xmax, ymin, ymax))
+
+k_p_ins <- k_p +
+  scale_colour_manual(values = c(clustered_color, dispersed_color, random_color)) +
+  geom_magnify(mapping=aes(from = from, to = to), shape = "rect",
+               data=magnify_data, expand = 0, proj.linetype=2,
+               colour="black", linewidth=line_width / 2)
+k_p_ins
+
+# Normalized H
+h1_df <- k_df %>%
+  mutate(sf = sqrt(sf / pi) / sqrt(square / pi) - r / sqrt(square / pi))
+
+write.csv(h1_df, file.path(data_folder, "h1.csv"))
+
+ylim_h1 <- c(min(h1_df$sf), 1)
+
+h1_p <- plot_sf(h1_df, "H1", breaks_y = c(0, 0.5, 1), labels_y = c("0.0", "0.5", "1.0"),
+                ylim = ylim_h1)
+h1_p
+
+# PCF
+pcf_df <- pcf_df %>%
+  mutate(pattern = as.factor(pattern),
+         square_s = as.factor(square))
+
+write.csv(pcf_df, file.path(data_folder, "pcf.csv"))
+
+# For maximally clustered pattern, PCF's estimate is huge
+# we do not want to show it on the plot
+max_md <- max((pcf_df %>% filter(pattern=="md"))$sf)
+
+pcf_df_plot <- pcf_df %>%
+  mutate(plot = case_when(pattern=="mc" & sf > max_md * 1.3 ~ FALSE,
+                          TRUE ~ TRUE)) %>%
+  filter(plot) %>%
+  dplyr::select(-plot)
+
+pcf_p <- plot_sf(pcf_df_plot, "PCF", breaks_y = c(0, 2, 4, 6), labels_y = c("0.0", "2.0", "4.0", "6.0"))
+pcf_p
+
+# LCF
+lcf_df <- lcf_df %>%
+  mutate(pattern = as.factor(pattern),
+         square_s = as.factor(square))
+
+write.csv(lcf_df, file.path(data_folder, "lcf.csv"))
+
+lcf_p <- plot_sf(lcf_df, "LCF", breaks_y = c(-1, 0, 1), labels_y = c("-1.0", "0.0", "1.0"),
+                 add_xaxis = TRUE, y_lab_vjust = -0.5)
+lcf_p
+
+# Plot together
+# Inches
+facet_height <- 0.9
+facet_space <- 0.02
+labels_height <- 0.03
+height <- 4 * facet_height + 4 * facet_space + labels_height
+
+pdf_out(file.path(img_folder, "sfs_plot.pdf"), width=width, height=height)
+ggarrange(k_p_ins, h1_p, pcf_p, lcf_p,
+          ncol = 1, newpage = FALSE)
 dev.off()
-
-# Matern cluster
-parent_num <- 75
-parent_intensity <- parent_num / square_a
-clust_pn <- num_points / parent_num
-
-mat_clust_pp <- rMatClust(parent_intensity,
-                          rad,
-                          clust_pn,
-                          win = square_window)
-
-x_min <- min(square_df$X) + disp_rect_width / 2
-x_max <- max(square_df$X) - disp_rect_width / 2
-y_min <- min(square_df$Y) + disp_rect_height / 2
-y_max <- max(square_df$Y) - disp_rect_height / 2
-
-vis_point <- get_max_dens_point(mat_clust_pp, c(x_min, x_max), c(y_min, y_max))
-
-# Make display rectangle
-mat_clust_disp_df <- make_rect_df(disp_rect_width, disp_rect_height, origin = c(vis_point$x, vis_point$y))
-
-# Get subset of pp in the display window
-mat_clust_window <- window_from_roi(mat_clust_disp_df)
-
-# Get subset of pp in the display window
-mat_clust_pp_subset <- ppp(mat_clust_pp$x, mat_clust_pp$y, window = mat_clust_window)
-
-# Save to file
-mat_clust_pp_file <- file.path(output_folder, "Mattern Cluster.pdf")
-
-pdf_out(mat_clust_pp_file, width = pdf_width, height = pdf_width * hw_ratio)
-save_pp_as_pdf(mat_clust_pp_subset, clustered_color, mat_clust_disp_df, cex=0.5)
-dev.off()
-
-# Compute H, PCF and LCF
-# Triangle
-h_df_three_clust <- h_func(three_clust_pp, correction = "Ripley", rmax=rmax_plot)
-pcf_df_three_clust <- pc_func(three_clust_pp, correction = "Ripley", rmax=rmax_plot)
-lcf_df_three_clust <- LCFest(three_clust_pp, rmax=rmax_plot, dim_lims = c(10, 50))
-
-# Matern cluster process
-h_df_mat_clust <- h_func(mat_clust_pp, correction = "Ripley", rmax=rmax_plot)
-pcf_df_mat_clust <- pc_func(mat_clust_pp, correction = "Ripley", rmax=rmax_plot)
-lcf_df_mat_clust <- LCFest(mat_clust_pp, rmax=rmax_plot, dim_lims = c(10, 50))
-
-# Plot results
-# Plot F and H
-# Y axis limits H
-h_y_lim_min <- min(h_df_three_clust$iso, h_df_mat_clust$iso)
-h_y_lim_max <- max(h_df_three_clust$iso, h_df_mat_clust$iso)
-h_y_lim <- c(h_y_lim_min * 1.5, h_y_lim_max + 3)
-
-# Y axis limits PCF
-pcf_y_lim_min <- min(pcf_df_three_clust$iso, pcf_df_mat_clust$iso)
-pcf_y_lim_max <- max(pcf_df_three_clust$iso, pcf_df_mat_clust$iso)
-pcf_y_lim <- c(-5, pcf_y_lim_max + 1)
-
-# Plots for the pattern with 3 clusters
-three_clust_dist <- c(50, 70, 120, 170)
-x_labels <- c("50  ", "  70", "120", "170")
-
-lcf_three_clust_p <- plot_lcf(lcf_df_three_clust, rad, rmax, clustered_color,
-                              line_width, "LCF",
-                              int_dists = three_clust_dist,
-                              y_lim = c(-1, 1),
-                              y_breaks = c(-1, 0, 1),
-                              show_y_axis=TRUE)
-
-# A weird hack to fix the saving of the funcs.pdf plot
-pdf_out(file.path(output_folder, "LCF_three.pdf"), width=1.6, height=1.6)
-print(lcf_three_clust_p)
-dev.off()
-
-h_three_clust_p <- plot_lcf(h_df_three_clust, rad, rmax, clustered_color,
-                            line_width, "H",
-                            int_dists = three_clust_dist,
-                            y_lim = h_y_lim,
-                            show_y_axis=TRUE)
-
-
-pcf_three_clust_p <- plot_lcf(pcf_df_three_clust, rad, rmax, clustered_color,
-                              line_width, "PCF",
-                              y_random = 1,
-                              int_dists = three_clust_dist,
-                              x_breaks =  three_clust_dist,
-                              x_labels = x_labels,
-                              y_lim = pcf_y_lim,
-                              show_x_axis=TRUE,
-                              show_y_axis=TRUE)
-
-
-# Plots for Mater cluster pattern
-mattern_dist <- c(50)
-
-lcf_matern_p <- plot_lcf(lcf_df_mat_clust, rad, rmax, clustered_color,
-                        line_width, "LCF",
-                        int_dists = mattern_dist,
-                        y_lim = c(-1, 1))
-
-h_matern_p <- plot_lcf(h_df_mat_clust, rad, rmax, clustered_color,
-                       line_width, "H",
-                       int_dists = mattern_dist,
-                       y_lim = h_y_lim)
-
-pcf_matern_p <- plot_lcf(pcf_df_mat_clust, rad, rmax, clustered_color,
-                         line_width, "PCF",
-                         y_random = 1,
-                         int_dists = mattern_dist,
-                         x_breaks =  mattern_dist,
-                         y_lim = pcf_y_lim,
-                         show_x_axis=TRUE)
-
-
-row_height <- 0.92
-row_space <- 0.02
-height <- row_height * 3 + 2 * row_space
-
-pdf_out(file.path(output_folder, "funcs.pdf"), width=3.3, height=height)
-ggarrange(lcf_three_clust_p, lcf_matern_p,
-          h_three_clust_p, h_matern_p,
-          pcf_three_clust_p, pcf_matern_p,
-          ncol = 2,
-          bottom=textGrob("r", gp = gpar(fontsize=default_pointsize, fontfamily=default_font)),
-          newpage = FALSE)
-dev.off()
-
-

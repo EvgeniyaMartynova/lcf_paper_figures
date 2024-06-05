@@ -109,6 +109,6 @@ calibration_p <- ggplot(calibration_df_glob) +
 
 calibration_p
 
-pdf_out("figure3.pdf", width=3.3, height=3)
+pdf_out("figure4.pdf", width=3.3, height=3)
 print(calibration_p)
 dev.off()
