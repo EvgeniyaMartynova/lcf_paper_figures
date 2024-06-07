@@ -265,7 +265,7 @@ data_folder <- "data/matern_cluster"
 power_csv_path <- file.path(data_folder, "power_sample.csv")
 
 power_sample_df <- read_power_sample_file(power_csv_path)
-matern_labeller <-label_bquote(cols = R[C] ~ "=" ~ 5 ~ "," ~  n[p] ~ "=" ~ 50)
+matern_labeller <-label_bquote(cols = R[c] ~ "=" ~ 5 ~ "," ~  n[p] ~ "=" ~ 50)
 
 power_sample_mat_clust_p <- build_power_sample_plot(power_sample_df, matern_labeller,
                                                     uncertainty=TRUE,
@@ -287,7 +287,7 @@ breaks_x <- c(10, 50, 100)
 breaks_y <- c(0, 0.5, 1)
 
 column <- sym("cluster_rad")
-x_name <- expression(R[C])
+x_name <- expression(R[c])
 x_lim <- c(min(power_effect_df$cluster_rad), max(power_effect_df$cluster_rad))
 
 test_x_val <- 10
