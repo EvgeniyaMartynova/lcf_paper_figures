@@ -10,7 +10,10 @@ library(lme4)
 # File names
 results_folder <- "lcf_tmas"
 stat_file_name <- "cell_stat.csv"
-lcf_stat_prefix <- "ai_stat"
+lcf_stat_prefix <- "lcf_stat"
+
+output_folder <- "data_to_plot"
+dir.create(output_folder, showWarnings = FALSE, recursive = FALSE)
 
 # Constants
 min_cell_num <- 40
@@ -77,28 +80,30 @@ for (slide in slides) {
       if (cell_types_num > 0) {
         for (ind in 1:cell_types_num) {
           cell_type <- tma_stat_filt$type[ind]
-          cell_num <- tma_stat_filt$n[ind]
+          if (cell_type %in% c("B cell", "Myeloid cell", "cDC2", "pDC")) {
+            cell_num <- tma_stat_filt$n[ind]
 
-          # To get clustering metric, average from 100 to 500
-          ctype_lcf_curve_file <- sprintf("%s_%s.csv", lcf_stat_prefix, cell_type)
-          ctype_lcf_curve_path <- file.path(tma_folder, ctype_lcf_curve_file)
+            # To get clustering metric, average from 100 to 500
+            ctype_lcf_curve_file <- sprintf("%s_%s.csv", lcf_stat_prefix, cell_type)
+            ctype_lcf_curve_path <- file.path(tma_folder, ctype_lcf_curve_file)
 
-          if (!file.exists(ctype_lcf_curve_path)) {
-            print(sprintf("%s does not exist!", ctype_lcf_curve_path))
-            next
+            if (!file.exists(ctype_lcf_curve_path)) {
+              print(sprintf("%s does not exist!", ctype_lcf_curve_path))
+              next
+            }
+
+            ctype_lcf_curve <- read.csv(ctype_lcf_curve_path)
+
+            lcf_integral <- get_lcf_integral(ctype_lcf_curve, r_first, r_last )
+
+            slides_df <- c(slides_df, slide)
+            patients_df <- c(patients_df, patient)
+            tmas_df <- c(tmas_df, tma_num)
+            ctypes_df <- c(ctypes_df, cell_type)
+            cell_nums_df <- c(cell_nums_df, cell_num)
+
+            lcf_integrals_df <- c(lcf_integrals_df, lcf_integral)
           }
-
-          ctype_lcf_curve <- read.csv(ctype_lcf_curve_path)
-
-          lcf_integral <- get_lcf_integral(ctype_lcf_curve, r_first, r_last )
-
-          slides_df <- c(slides_df, slide)
-          patients_df <- c(patients_df, patient)
-          tmas_df <- c(tmas_df, tma_num)
-          ctypes_df <- c(ctypes_df, cell_type)
-          cell_nums_df <- c(cell_nums_df, cell_num)
-
-          lcf_integrals_df <- c(lcf_integrals_df, lcf_integral)
         }
       }
     }
@@ -114,5 +119,5 @@ lcf_stat_df <- data.frame(slide=slides_df,
                          lcf_integral=lcf_integrals_df)
 
 
-lcf_stat_file_path <- "lcf_stat_tmas.csv"
+lcf_stat_file_path <- file.path(output_folder, "lcf_stat_tmas.csv")
 write.csv(lcf_stat_df, lcf_stat_file_path)

@@ -10,7 +10,7 @@ library(lme4)
 source("../utils_lcf.R")
 source("../settings.R")
 
-stat_file <- "data/lcf_stat_tmas.csv"
+stat_file <- "data_to_plot/lcf_stat_tmas.csv"
 output_folder <- "img/tmas"
 dir.create(output_folder, showWarnings = FALSE, recursive = TRUE)
 

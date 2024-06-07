@@ -15,7 +15,7 @@ source("../settings.R")
 rmax <- 500
 min_cell_num <- 40
 
-prediction_path <- "data/cell"
+prediction_path <- "data_to_plot/cell"
 
 output_folder <- "img/tmas"
 dir.create(output_folder, showWarnings = FALSE, recursive = FALSE)
@@ -129,7 +129,7 @@ lcf_plot <- ggplot(lcf_cts) +
 
 lcf_plot
 
-lcf_pdf_path <- file.path(output_folder, sprintf("%s_%s_%s_all_LCF_DC.pdf", slide, patient, tma_num))
+lcf_pdf_path <- file.path(output_folder, "all_LCF_DC.pdf")
 
 pdf_out(lcf_pdf_path, width=2.1, height=2)
 print(lcf_plot)

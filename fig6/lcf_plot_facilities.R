@@ -10,7 +10,7 @@ library(ggmagnify)
 
 source("../settings.R")
 
-data_folder <- "data"
+data_folder <- "data_to_plot"
 
 air_stat_fp <- file.path(data_folder, "lcf_stat_ohio_air.csv")
 waste_stat_fp <- file.path(data_folder, "lcf_stat_ohio_waste.csv")

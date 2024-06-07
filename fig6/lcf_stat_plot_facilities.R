@@ -10,8 +10,8 @@ library(lme4)
 source("../settings.R")
 
 # File names
-data_folder <- "data"
-stat_file_name <- "lcf_stat_air.csv"
+data_folder <- "data_to_plot"
+stat_file_name <- "lcf_stat_facilities.csv"
 stat_file_path <- file.path(data_folder, stat_file_name)
 
 output_folder <- "img/facilities"
