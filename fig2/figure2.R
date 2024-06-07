@@ -5,6 +5,7 @@ library(dplyr)
 library(lcfstat)
 library(spatstat)
 library(ggplot2)
+library(egg)
 library(ggmagnify)
 
 source("../settings.R")
