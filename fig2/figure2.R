@@ -138,6 +138,8 @@ steps_in <- 513
 lcf_mc_dims <- c(30, 40, 50)
 lcf_md_dims <- c(30, 45, 60)
 
+i <- 1
+
 for (i in 1:length(square_sides)) {
   square_side <- square_sides[i]
   # Increase the number of bins for r
@@ -188,10 +190,10 @@ for (i in 1:length(square_sides)) {
 
   # LCF
   dim_mc <- lcf_mc_dims[i]
-  lcf_mc <- LCFest(pp_mc, correction = correction, r = seq(0, rmax, length.out=steps_r), dim=dim_mc)
-  lcf_rand <- LCFest(pp_random, correction = correction, r = seq(0, rmax, length.out=steps_r))
+  lcf_mc <- LCFest(pp_mc, correction = correction, r = seq(0, rmax, length.out=steps_r), rmax=rmax, dim=dim_mc)
+  lcf_rand <- LCFest(pp_random, correction = correction, r = seq(0, rmax, length.out=steps_r), rmax=rmax)
   dim_md <- lcf_md_dims[i]
-  lcf_md <- LCFest(grid_pp, correction = correction, r = seq(0, rmax, length.out=steps_r), dim=dim_md)
+  lcf_md <- LCFest(grid_pp, correction = correction, r = seq(0, rmax, length.out=steps_r), rmax=rmax, dim=dim_md)
 
   lcf_df_ss <- data.frame(r=lcf_mc$r, sf = c(lcf_mc$iso, lcf_rand$iso, lcf_md$iso),
                           pattern = c(rep("mc", nrow(lcf_mc)), rep("rand", nrow(lcf_rand)), rep("md", nrow(lcf_md))),

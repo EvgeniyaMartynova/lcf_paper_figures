@@ -3,6 +3,10 @@ library(jsonlite)
 library(stringr)
 library(sf)
 
+rad2deg <- function(rad) {
+  rad * 180 / pi
+}
+
 make_rect_df <- function(width, height, origin=c(0, 0)) {
   xo <- origin[1]
   yo <- origin[2]
@@ -15,6 +19,22 @@ make_rect_df <- function(width, height, origin=c(0, 0)) {
 make_square_df <- function(side, origin=c(0, 0)) {
   square_df <- make_rect_df(side, side, origin)
   return(square_df)
+}
+
+make_rect_win <- function(width, height, origin=c(0, 0)) {
+  xo <- origin[1]
+  yo <- origin[2]
+
+  win <- owin(xrange=c(xo, xo + width),
+              yrange=c(yo, yo + height))
+
+  win
+}
+
+make_square_win <- function(side, origin=c(0, 0)) {
+  win <- make_rect_win(side, side, origin)
+
+  win
 }
 
 make_circle_df <- function(xo, yo, radius) {
@@ -270,6 +290,31 @@ pc_func <- function(pp, ...) {
   return(pc_fun_df[2:nrow(pc_fun_df), ])
 }
 
+plot_scale <- function(scale, scale_offset, x_lim, y_lim, scale_lwd, text_width,
+                       text_height, scale_right=TRUE) {
+
+  if (scale_right) {
+    seg_x0 <- x_lim[2] - scale_offset - scale
+  } else {
+    seg_x0 <- x_lim[1] + scale_offset
+  }
+
+  seg_x1 <- seg_x0 + scale
+  # For Y axis offset should be negative
+  seg_y0 <- y_lim[2] - scale_offset
+  seg_y1 <- seg_y0
+
+  segments(seg_x0, seg_y0, x1 = seg_x1, y1 = seg_y1,
+           col = "black", lwd=scale_lwd, lend=2)
+
+  label_x <- seg_x0
+  if (scale_right) {
+    label_x <- label_x - text_width
+  }
+  label_y <- seg_y0 - text_height
+  text(label_x, label_y, as.expression(bquote(.(as.character(scale))~units)), cex=0.675, adj = 0)
+}
+
 save_pp_as_pdf <- function(pp, col, disp_window_df, clust_rad=NULL, clust_o_x=0, clust_o_y=0, cex=1,
                            scale=NULL, scale_offset=NULL, scale_lwd=3, scale_right=FALSE,
                            text_height=20, text_width=50) {
@@ -407,10 +452,10 @@ summ_stat <- function(p_processes, r_check, stat_func, ...) {
 }
 
 
-sim_hardcore_mh <- function(num_points, inh_distance, window, nsim, nrep=1e6) {
+sim_hardcore_mh <- function(num_points, inh_distance, window, roi_a, nsim, nrep=1e6) {
   # Hard core process:
   hardcore_model <- list(cif="hardcore",
-                         par=list(beta=num_points/square_a, hc=inh_distance),
+                         par=list(beta=num_points/roi_a, hc=inh_distance),
                          w=window)
 
   hc_pps <- rmh(model=hardcore_model,
