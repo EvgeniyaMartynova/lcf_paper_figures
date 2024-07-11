@@ -408,7 +408,12 @@ sim_pp_pnum <- function(num_points, pp_fun, num_sim, intensity_gen, ...) {
   }
 
   stopifnot(length(processes_trimmed)==num_sim)
-  return(processes_trimmed)
+
+  if (n_sim == 1) {
+    processes_trimmed[[1]]
+  } else {
+    processes_trimmed
+  }
 }
 
 summ_stat <- function(p_processes, r_check, stat_func, ...) {
@@ -451,42 +456,40 @@ sampl_distr_plot <- function(null_test_stat_df, xlab) {
 }
 
 
-process_pps_lcf <- function(trial_pps,
+process_pps_lcf <- function(pps,
                             pp_fun,
-                            num_points,
-                            intensity,
                             r_check,
                             dim_lims,
                             correction,
                             ...) {
 
-  trial_stat_lcf <- NULL
-  for (i in seq_along(trial_pps)) {
+  stats <- NULL
+  for (i in seq_along(pps)) {
     lcf <- NULL
 
     while (is.null(lcf)) {
-      p_process <- trial_pps[[i]]
+      pp <- pps[[i]]
 
       output <- tryCatch(
         error = function(cnd) {
           print(paste0("LCF computation failed, reason ", conditionMessage(cnd)))
           num_LCFest_failed <<- num_LCFest_failed + 1
-          new_pp <- sim_pp_pnum(num_points, pp_fun, 1, intensity, ...)[[1]]
+          new_pp <- pp_fun(...)
           return(new_pp)
         }, {
-          lcf <- LCFest(p_process, r=c(0, r_check), dim_lims = dim_lims, correction=correction)
+          lcf <- LCFest(pp, r=c(0, r_check), dim_lims = dim_lims, correction=correction)
         }
       )
 
       if (inherits(output, "ppp")) {
-        trial_pps[[i]] <- output
+        pps[[i]] <- output
       }
     }
 
     stat <- lcf[[3]][2]
-    trial_stat_lcf <- c(trial_stat_lcf, stat)
+    stats <- c(stats, stat)
   }
 
-  list(lcf_stat=trial_stat_lcf, updated_pps=trial_pps)
+  list(lcf_stat=stats, updated_pps=pps)
 }
 
