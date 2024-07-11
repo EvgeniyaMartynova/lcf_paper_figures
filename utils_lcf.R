@@ -48,7 +48,7 @@ make_circle_df <- function(xo, yo, radius) {
 # Generates point pattern maximally dispersed at a given distance
 max_disp_pp <- function(window, dist, show_plot=FALSE) {
 
-  window_df <- as.data.frame(cbind(window$bdry[[1]]$x, window$bdry[[1]]$y))
+  window_df <- as.data.frame(window)
   window_df[nrow(window_df) + 1,] <- window_df[1,]
 
   coords_list <- list(as.matrix(window_df))
@@ -315,17 +315,17 @@ plot_scale <- function(scale, scale_offset, x_lim, y_lim, scale_lwd, text_width,
   text(label_x, label_y, as.expression(bquote(.(as.character(scale))~units)), cex=0.675, adj = 0)
 }
 
-save_pp_as_pdf <- function(pp, col, disp_window_df, clust_rad=NULL, clust_o_x=0, clust_o_y=0, cex=1,
+save_pp_as_pdf <- function(pp, col, window, clust_rad=NULL, clust_o_x=0, clust_o_y=0, cex=1,
                            scale=NULL, scale_offset=NULL, scale_lwd=3, scale_right=FALSE,
                            text_height=20, text_width=50) {
   points <- data.frame(X=pp$x, Y=pp$y)
-  x_lim <- c(min(disp_window_df$X), max(disp_window_df$X))
-  y_lim <- c(min(disp_window_df$Y), max(disp_window_df$Y))
+  x_lim <- window$xrange
+  y_lim <- window$yrange
 
   par(mfrow = c(1,1), mar = c(0,0,0,0), lwd=1)
   plot(1, 1, col = "white", asp=1, axes=FALSE, xlab="", ylab="",
        xlim=x_lim,  ylim=y_lim)
-  polygon(disp_window_df$X, disp_window_df$Y)
+  plot(window, add = TRUE)
 
   if (!is.null(clust_rad)) {
     draw_rad <- clust_rad + 5
@@ -341,27 +341,14 @@ save_pp_as_pdf <- function(pp, col, disp_window_df, clust_rad=NULL, clust_o_x=0,
     domain_seg_y2 <- clust_o_y + sin(angle2) * draw_rad
   }
   if (!is.null(scale) && !is.null(scale_offset)) {
-    if (scale_right) {
-      seg_x0 <- x_lim[2] - scale_offset - scale
-    } else {
-      seg_x0 <- x_lim[1] + scale_offset
-    }
 
-    seg_x1 <- seg_x0 + scale
-    # For Y axis offset should be negative
-    seg_y0 <- y_lim[2] - scale_offset
-    seg_y1 <- seg_y0
-
-    segments(seg_x0, seg_y0, x1 = seg_x1, y1 = seg_y1,
-             col = "black", lwd=scale_lwd, lend=2)
-
-    label_x <- seg_x0
-    if (scale_right) {
-      label_x <- label_x - text_width
-    }
-    label_y <- seg_y0 - text_height
-    text(label_x, label_y, as.expression(bquote(bold(.(as.character(scale)))~bold(units))), cex=0.675, adj = 0)
+    plot_scale(scale, scale_offset,
+               x_lim, y_lim,
+               scale_lwd,
+               text_width, text_height,
+               scale_right)
   }
+
   points(points$X, points$Y, pch=16, col=col, cex=cex)
 }
 
