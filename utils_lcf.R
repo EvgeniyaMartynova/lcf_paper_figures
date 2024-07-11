@@ -315,31 +315,17 @@ plot_scale <- function(scale, scale_offset, x_lim, y_lim, scale_lwd, text_width,
   text(label_x, label_y, as.expression(bquote(.(as.character(scale))~units)), cex=0.675, adj = 0)
 }
 
-save_pp_as_pdf <- function(pp, col, window, clust_rad=NULL, clust_o_x=0, clust_o_y=0, cex=1,
-                           scale=NULL, scale_offset=NULL, scale_lwd=3, scale_right=FALSE,
+save_pp_as_pdf <- function(pp, col, x_lim, y_lim, cex=1,
+                           scale=NULL, scale_offset=NULL,
+                           scale_lwd=3, scale_right=FALSE,
                            text_height=20, text_width=50) {
   points <- data.frame(X=pp$x, Y=pp$y)
-  x_lim <- window$xrange
-  y_lim <- window$yrange
 
   par(mfrow = c(1,1), mar = c(0,0,0,0), lwd=1)
   plot(1, 1, col = "white", asp=1, axes=FALSE, xlab="", ylab="",
        xlim=x_lim,  ylim=y_lim)
-  plot(window, add = TRUE)
+  rect(xleft = x_lim[1], xright = x_lim[2], ybottom = y_lim[1], ytop = y_lim[2])
 
-  if (!is.null(clust_rad)) {
-    draw_rad <- clust_rad + 5
-    draw.circle(clust_o_x, clust_o_y, draw_rad, col="gray", border="black")
-
-    # Plot domain size
-    angle1 <- 3 * pi / 4
-    angle2 <- - pi / 4
-
-    domain_seg_x1 <- clust_o_x + cos(angle1) * draw_rad
-    domain_seg_y1 <- clust_o_y + sin(angle1) * draw_rad
-    domain_seg_x2 <- clust_o_x + cos(angle2) * draw_rad
-    domain_seg_y2 <- clust_o_y + sin(angle2) * draw_rad
-  }
   if (!is.null(scale) && !is.null(scale_offset)) {
 
     plot_scale(scale, scale_offset,

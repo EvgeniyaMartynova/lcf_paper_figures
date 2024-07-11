@@ -16,7 +16,7 @@ get_dispaly_win_origin <- function(point_vis, disp_square_side, large_radius) {
   xo <- point_vis$X - disp_square_side / 2
   yo <- min(point_vis$Y + disp_square_side /3 , point_vis$Y + 1.1 * large_radius) - disp_square_side / 2
 
-  list(xo=xo, yo=yo)
+  list(x=xo, y=yo)
 }
 
 make_vis_target_segms <- function(point, size) {
@@ -74,7 +74,8 @@ plot_radius <- function(point, rad, text,
 
 plot_full_and_zoomed_pp <- function(points,
                                     col,
-                                    window,
+                                    x_lim,
+                                    y_lim,
                                     point_vis,
                                     small_radius,
                                     large_radius,
@@ -83,19 +84,18 @@ plot_full_and_zoomed_pp <- function(points,
                                     plot_radii=FALSE,
                                     add_scale=FALSE) {
 
-  square_side <- window$xrange[2] - window$xrange[1]
+  square_side <- x_lim[2] - x_lim[1]
   # Scale a large radius to display in the inset
   large_radius_sc <- zoom_ratio * square_side / 2
 
-  x_lim <- window$xrange
-  # Fit the display window of the point pattern and the inset
-  y_lim <- c(window$yrange[1] - large_radius_sc * 2 - 10, window$yrange[2])
+  # Make y_lims for the whole plot to fit the inset
+  y_lim_plot <- c(y_lim[1] - large_radius_sc * 2 - 10, y_lim[2])
 
   # Plot the point pattern
   par(mfrow = c(1,1), mar = c(0,0,0,0), lwd=1)
   plot(Y ~ X, data=points, pch=16, col=col, asp=1, axes=FALSE, xlab="", ylab="",
-       xlim=x_lim,  ylim=y_lim, cex=0.5)
-  plot(window, add = TRUE)
+       xlim=x_lim,  ylim=y_lim_plot, cex=0.5)
+  rect(xleft = x_lim[1], xright = x_lim[2], ybottom = y_lim[1], ytop = y_lim[2])
 
   # Make the point at the center of the inset larger
   points(point_vis$X, point_vis$Y, pch=16, cex=0.65, col=col)
@@ -122,7 +122,7 @@ plot_full_and_zoomed_pp <- function(points,
   small_radius_sc <- small_radius * scalar
 
   # The coordinates of the central point in the magnified inset
-  point_vis_inset <- data.frame(X=point_vis$X[1], Y = window$yrange[1] - large_radius_sc - 10)
+  point_vis_inset <- data.frame(X=point_vis$X[1], Y = y_lim[1] - large_radius_sc - 10)
 
   # Compute the sift of the coordinates of other points in the inset
   x_sh <- point_vis_inset$X[1] - scalar * point_vis$X[1]
@@ -181,16 +181,18 @@ save_pp_with_zoom <- function(pp, point_vis, pdf_name, point_color, plot_radii=F
 
   # Build the square around this point
   win_origin <- get_dispaly_win_origin(point_vis, disp_square_side, large_radius)
-  disp_square_window <- make_square_win(disp_square_side, c(win_origin$xo, win_origin$yo))
+  # Make display rectangle
+  disp_x_lim <- c(0, disp_square_side) + win_origin$x
+  disp_y_lim <- c(0, disp_square_side) + win_origin$y
 
-  # Extract points in the plotting window
-  pp_plot_subset <- ppp(pp$x, pp$y, window = disp_square_window)
-  points_plot <- data.frame(X=pp_plot_subset$x, Y=pp_plot_subset$y)
+  # Get a subset of a point pattern for visualization
+  points_plot <- data.frame(X=pp$x, Y=pp$y) %>%
+    filter(X >= disp_x_lim[1] & X <= disp_x_lim[2] & Y >= disp_y_lim[1] & Y <= disp_y_lim[2])
 
   # Full visualization of point pattern subset and F-func ROI
   pp_file <- file.path(output_folder, pdf_name)
   pdf_out(pp_file, width = pdf_width, height = pdf_height)
-  plot_full_and_zoomed_pp(points_plot, point_color, disp_square_window, point_vis,
+  plot_full_and_zoomed_pp(points_plot, point_color, disp_x_lim, disp_y_lim, point_vis,
                           small_radius, large_radius, zoom_ratio, plot_radii=plot_radii, add_scale=add_scale)
   dev.off()
 }

@@ -19,18 +19,16 @@ set.seed(seed)
 output_folder <- "img"
 dir.create(output_folder, showWarnings = FALSE)
 
-# Clustered patterns
-num_points <- 2000
-
 clustered_color <- "#DB165C"
 clustered_color_tr <- alpha(clustered_color, alpha=0.3)
 
 # Window - square
 square_side <- 1000
-# TODO: get rid of the square_df and only use square_window?
-square_df <- make_square_df(square_side)
-square_window <- window_from_roi(square_df)
+square_window <- make_square_win(square_side)
 square_a <- square_side^2
+
+# Average number of points in all point patterns
+num_points <- 2000
 
 # Domain radius, same for all patterns
 rad <- 25
@@ -38,37 +36,36 @@ circle_a <- pi * rad^2
 
 rmax_plot <- square_side / 4
 
-# Display window params
-# Based on the pattern with 3 clusters
-hw_ratio <- 0.73 # 2.1 / sqrt(3)
+# Display window parameters
+# Empirically found based on the pattern with 3 clusters
+hw_ratio <- 0.73
+pdf_width <- 1.5
+pdf_height <- pdf_width * hw_ratio
 
+# ggplot2 parameters
 expansion_y <- expansion(mult = 0.02, add = 0)
 expansion_x <- expansion(mult = 0.005, add = 0)
-
 line_width <- 1 / ggp2_magic_number
 
 ppunif_from_clust_centers <- function(centers, clust_rad, clust_int, square_window) {
 
-  # Points are distributed uniformly inside clusters
-  xs <- NULL
-  ys <- NULL
-
+  # Make clusters
+  pps <- vector(mode = "list", length = 0)
   for (i in 1:nrow(centers)) {
     xo <- centers$x[i]
     yo <- centers$y[i]
 
+    # Points are distributed uniformly inside clusters
     circle_df <- make_circle_df(xo, yo, clust_rad)
     cluster_window <- window_from_roi(circle_df)
     pp <- rpoispp(clust_int, win = cluster_window, nsim=1)
 
-    x <- pp[["x"]]
-    xs <- c(xs, x)
-
-    y <- pp[["y"]]
-    ys <- c(ys, y)
+    pps[[i]] <- pp
   }
 
-  pp <- ppp(xs, ys, window = square_window)
+  pps[["W"]] <- square_window
+
+  pp <- do.call("superimpose", pps)
   pp
 }
 
@@ -183,37 +180,33 @@ plot_lcf <- function(df, domain_rad, rmax, col,
   lcf_p
 }
 
-
-# Theree clusters
+# Three clusters
 cluster_dist <- 120
 column_distance <- sqrt(cluster_dist^2 - (cluster_dist / 2)^2)
 
-padding <- 75
-disp_rect_width <- cluster_dist + 2 * rad + 2 * padding  #3 * column_distance + 2 * rad
-disp_rect_height <- disp_rect_width * hw_ratio
-#hw_ratio <- disp_rect_height / disp_rect_width
-
-# Add more space around border
-disp_rect_width <- disp_rect_width + 4
-
-cluster_centers <- data.frame(x=c(-cluster_dist / 2, 0, cluster_dist / 2),
-                              y=c(-column_distance/2, column_distance/2, -column_distance/2))
+# Make a point pattern with three clusters
+cluster_centers <- data.frame(x=c(-cluster_dist / 2, 0, cluster_dist / 2) + square_side / 2,
+                              y=c(-column_distance/2, column_distance/2, -column_distance/2) + square_side / 2)
 clust_intensity <- num_points / 3 / circle_a
 
 three_clust_pp <- ppunif_from_clust_centers(cluster_centers, rad, clust_intensity, square_window)
 
-# Make display rectangle
-three_clust_disp_df <- make_rect_df(disp_rect_width, disp_rect_height)
+# Compute the display limits
+padding <- 75
+disp_rect_width <- cluster_dist + 2 * rad + 2 * padding
+disp_rect_height <- disp_rect_width * hw_ratio
+
+ox <- (square_side - disp_rect_width) / 2
+disp_x_lim <- c(0, disp_rect_width) + ox
+
+oy <- (square_side - disp_rect_height) / 2
+disp_y_lim <- c(0, disp_rect_height) + oy
 
 # Save to file
 three_clust_pp_file <- file.path(output_folder, "Three clusters.pdf")
-x_lim <- c(min(three_clust_disp_df$X), max(three_clust_disp_df$X))
-y_lim <- c(min(three_clust_disp_df$Y), max(three_clust_disp_df$Y))
-hw_ratio <- (y_lim[2] - y_lim[1]) / (x_lim[2] - x_lim[1])
-pdf_width <- 1.5
-pdf_out(three_clust_pp_file, width = pdf_width, height = pdf_width * hw_ratio)
-save_pp_as_pdf(three_clust_pp, clustered_color, three_clust_disp_df, scale=50,
-               scale_offset=12.5, cex=0.5)
+pdf_out(three_clust_pp_file, width = pdf_width, height = pdf_height)
+save_pp_as_pdf(three_clust_pp, clustered_color, disp_x_lim, disp_y_lim,
+               scale=50, scale_offset=12.5, cex=0.5)
 dev.off()
 
 # Matern cluster
@@ -226,27 +219,31 @@ mat_clust_pp <- rMatClust(parent_intensity,
                           clust_pn,
                           win = square_window)
 
-x_min <- min(square_df$X) + disp_rect_width / 2
-x_max <- max(square_df$X) - disp_rect_width / 2
-y_min <- min(square_df$Y) + disp_rect_height / 2
-y_max <- max(square_df$Y) - disp_rect_height / 2
+# Find the location with the highest point density to center the display window at
+# Restrict the search to the central area of the window in such a way that
+# any selected central point gives the display window that fully lies in the main window
+x_min <- square_window$xrange[1] + disp_rect_width / 2
+x_max <- square_window$xrange[2] - disp_rect_width / 2
+y_min <- square_window$yrange[1] + disp_rect_height / 2
+y_max <- square_window$yrange[2] - disp_rect_height / 2
 
 vis_point <- get_max_dens_point(mat_clust_pp, c(x_min, x_max), c(y_min, y_max))
 
 # Make display rectangle
-mat_clust_disp_df <- make_rect_df(disp_rect_width, disp_rect_height, origin = c(vis_point$x, vis_point$y))
+ox <- vis_point$x - disp_rect_width / 2
+disp_x_lim <- c(0, disp_rect_width) + ox
 
-# Get subset of pp in the display window
-mat_clust_window <- window_from_roi(mat_clust_disp_df)
+oy <- vis_point$y - disp_rect_height / 2
+disp_y_lim <- c(0, disp_rect_height) + oy
 
-# Get subset of pp in the display window
-mat_clust_pp_subset <- ppp(mat_clust_pp$x, mat_clust_pp$y, window = mat_clust_window)
+# Get a subset of a point pattern for visualization
+mat_clust_pp_sub <- subset(mat_clust_pp, (x >= disp_x_lim[1] & x <= disp_x_lim[2]
+                                          & y >= disp_y_lim[1] & y <= disp_y_lim[2]))
 
 # Save to file
 mat_clust_pp_file <- file.path(output_folder, "Mattern Cluster.pdf")
-
-pdf_out(mat_clust_pp_file, width = pdf_width, height = pdf_width * hw_ratio)
-save_pp_as_pdf(mat_clust_pp_subset, clustered_color, mat_clust_disp_df, cex=0.5)
+pdf_out(mat_clust_pp_file, width = pdf_width, height = pdf_height)
+save_pp_as_pdf(mat_clust_pp_sub, clustered_color, disp_x_lim, disp_y_lim, cex=0.5)
 dev.off()
 
 # Compute H, PCF and LCF
@@ -260,19 +257,8 @@ h_df_mat_clust <- h_func(mat_clust_pp, correction = "Ripley", rmax=rmax_plot)
 pcf_df_mat_clust <- pc_func(mat_clust_pp, correction = "Ripley", rmax=rmax_plot)
 lcf_df_mat_clust <- LCFest(mat_clust_pp, rmax=rmax_plot, dim_lims = c(10, 50))
 
-# Plot results
-# Plot F and H
-# Y axis limits H
-h_y_lim_min <- min(h_df_three_clust$iso, h_df_mat_clust$iso)
-h_y_lim_max <- max(h_df_three_clust$iso, h_df_mat_clust$iso)
-h_y_lim <- c(h_y_lim_min * 1.5, h_y_lim_max + 3)
-
-# Y axis limits PCF
-pcf_y_lim_min <- min(pcf_df_three_clust$iso, pcf_df_mat_clust$iso)
-pcf_y_lim_max <- max(pcf_df_three_clust$iso, pcf_df_mat_clust$iso)
-pcf_y_lim <- c(-5, pcf_y_lim_max + 1)
-
 # Plots for the pattern with 3 clusters
+# LCF
 three_clust_dist <- c(50, 70, 120, 170)
 x_labels <- c("50  ", "  70", "120", "170")
 
@@ -288,12 +274,22 @@ pdf_out(file.path(output_folder, "LCF_three.pdf"), width=1.6, height=1.6)
 print(lcf_three_clust_p)
 dev.off()
 
+# H
+h_y_lim_min <- min(h_df_three_clust$iso, h_df_mat_clust$iso)
+h_y_lim_max <- max(h_df_three_clust$iso, h_df_mat_clust$iso)
+h_y_lim <- c(h_y_lim_min * 1.5, h_y_lim_max + 3)
+
 h_three_clust_p <- plot_lcf(h_df_three_clust, rad, rmax, clustered_color,
                             line_width, "H",
                             int_dists = three_clust_dist,
                             y_lim = h_y_lim,
                             show_y_axis=TRUE)
 
+
+# PCF
+pcf_y_lim_min <- min(pcf_df_three_clust$iso, pcf_df_mat_clust$iso)
+pcf_y_lim_max <- max(pcf_df_three_clust$iso, pcf_df_mat_clust$iso)
+pcf_y_lim <- c(-5, pcf_y_lim_max + 1)
 
 pcf_three_clust_p <- plot_lcf(pcf_df_three_clust, rad, rmax, clustered_color,
                               line_width, "PCF",
@@ -327,7 +323,7 @@ pcf_matern_p <- plot_lcf(pcf_df_mat_clust, rad, rmax, clustered_color,
                          y_lim = pcf_y_lim,
                          show_x_axis=TRUE)
 
-
+# Combine all plots
 row_height <- 0.92
 row_space <- 0.02
 height <- row_height * 3 + 2 * row_space
